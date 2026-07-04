@@ -1,7 +1,7 @@
 import sqlite3
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = "getsemani_ecossistema_secret_secure_key"
@@ -11,13 +11,11 @@ def conectar_banco():
     db_path = os.path.join(base_dir, 'getsemani.db')
     return sqlite3.connect(db_path)
 
-
-
 def inicializar_banco():
     conn = conectar_banco()
     cursor = conn.cursor()
     
-    # 1. Tabela de Usuários (Acessos ilimitados com controle de cargo)
+    # 1. Tabela de Usuários
     cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         nome TEXT, 
@@ -25,7 +23,7 @@ def inicializar_banco():
         senha TEXT, 
         cargo TEXT)''')
         
-    # 2. Tabela de Dízimos (Identificados por Fiel)
+    # 2. Tabela de Dízimos
     cursor.execute('''CREATE TABLE IF NOT EXISTS dizimos (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         fiel TEXT, 
@@ -33,14 +31,14 @@ def inicializar_banco():
         ministerio TEXT, 
         data TEXT)''')
         
-    # 3. Tabela de Ofertas (100% ANÔNIMA)
+    # 3. Tabela de Ofertas
     cursor.execute('''CREATE TABLE IF NOT EXISTS ofertas (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         valor REAL, 
         culto TEXT, 
         data TEXT)''')
         
-    # 4. Tabela de Saídas / Despesas (Plano de contas categorizado)
+    # 4. Tabela de Saídas / Despesas
     cursor.execute('''CREATE TABLE IF NOT EXISTS despesas (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         categoria TEXT, 
@@ -48,7 +46,7 @@ def inicializar_banco():
         descricao TEXT, 
         data TEXT)''')
         
-    # 5. Tabela de Patrimônio (Com número de série e localização)
+    # 5. Tabela de Patrimônio
     cursor.execute('''CREATE TABLE IF NOT EXISTS patrimonio (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         item TEXT, 
@@ -58,7 +56,7 @@ def inicializar_banco():
         nota_fiscal_path TEXT, 
         data_cadastro TEXT)''')
 
-    # Garante que o seu usuário Administrador padrão sempre exista
+    # Garante usuário Administrador padrão
     cursor.execute("SELECT * FROM usuarios WHERE login = 'brayan'")
     if not cursor.fetchone():
         cursor.execute("INSERT INTO usuarios (nome, login, senha, cargo) VALUES (?, ?, ?, ?)",
@@ -104,7 +102,7 @@ def dashboard():
     
     mes_atual = datetime.now().strftime('%Y-%m')
     
-    # FLUXO MENSAL (Zera na virada do mês)
+    # FLUXO MENSAL ATUAL
     cursor.execute("SELECT SUM(valor) FROM dizimos WHERE data LIKE ?", (f"{mes_atual}%",))
     total_dizimos_mes = cursor.fetchone()[0] or 0.0
     
@@ -116,7 +114,7 @@ def dashboard():
     cursor.execute("SELECT SUM(valor) FROM despesas WHERE data LIKE ?", (f"{mes_atual}%",))
     saidas_mes = cursor.fetchone()[0] or 0.0
     
-    # SALDO REAL (Nunca zera)
+    # SALDO REAL GERAL
     cursor.execute("SELECT SUM(valor) FROM dizimos")
     total_dizimos_geral = cursor.fetchone()[0] or 0.0
     
@@ -128,13 +126,45 @@ def dashboard():
     
     saldo_geral_caixa = (total_dizimos_geral + total_ofertas_geral) - total_despesas_geral
     
+    # ==========================================
+    # NOVO: CÁLCULO DOS ALTOS E BAIXOS (ÚLTIMOS 6 MESES)
+    # ==========================================
+    grafico_meses = []
+    grafico_entradas = []
+    grafico_saidas = []
+    
+    # Gera os filtros ano-mês dos últimos 6 meses cronologicamente
+    for i in range(5, -1, -1):
+        # Subtrai meses de forma simples baseado em blocos de 30 dias
+        data_passada = datetime.now() - timedelta(days=i*30)
+        ano_mes = data_passada.strftime('%Y-%m')
+        nome_mes_visivel = data_passada.strftime('%b/%y') # Ex: Jan/26, Fev/26
+        
+        # Soma entradas do respectivo mês
+        cursor.execute("SELECT SUM(valor) FROM dizimos WHERE data LIKE ?", (f"{ano_mes}%",))
+        d_m = cursor.fetchone()[0] or 0.0
+        cursor.execute("SELECT SUM(valor) FROM ofertas WHERE data LIKE ?", (f"{ano_mes}%",))
+        o_m = cursor.fetchone()[0] or 0.0
+        
+        # Soma despesas do respectivo mês
+        cursor.execute("SELECT SUM(valor) FROM despesas WHERE data LIKE ?", (f"{ano_mes}%",))
+        s_m = cursor.fetchone()[0] or 0.0
+        
+        grafico_meses.append(nome_mes_visivel)
+        grafico_entradas.append(d_m + o_m)
+        grafico_saidas.append(s_m)
+    # ==========================================
+
     conn.close()
     
     return render_template('index.html', 
                            saldo_caixa=saldo_geral_caixa, 
                            entradas=entradas_mes, 
                            saidas=saidas_mes,
-                           cargo_usuario=session.get('usuario_cargo'))
+                           cargo_usuario=session.get('usuario_cargo'),
+                           grafico_meses=grafico_meses,
+                           grafico_entradas=grafico_entradas,
+                           grafico_saidas=grafico_saidas)
 
 @app.route('/logout')
 def logout():
@@ -147,7 +177,7 @@ def transacoes():
         return redirect(url_for('login'))
         
     if request.method == 'POST':
-        tipo = request.form['tipo_transacao'] # dizimo, oferta ou despesa
+        tipo = request.form['tipo_transacao']
         data_atual = datetime.now().strftime('%Y-%m-%d')
         
         conn = conectar_banco()
@@ -163,18 +193,16 @@ def transacoes():
         elif tipo == 'oferta':
             valor = float(request.form['oferta_valor'])
             culto = request.form['oferta_culto']
-            # Oferta entra 100% anônima na tabela ofertas
             cursor.execute("INSERT INTO ofertas (valor, culto, data) VALUES (?, ?, ?)",
                            (valor, culto, data_atual))
             
         elif tipo == 'despesa':
-            categoria = request.form['despesa_categoria'] # Luz, Água, Internet, etc.
+            categoria = request.form['despesa_categoria']
             valor = float(request.form['despesa_valor'])
             descricao = request.form['despesa_descricao']
             cursor.execute("INSERT INTO despesas (categoria, valor, descricao, data) VALUES (?, ?, ?, ?)",
                            (categoria, valor, descricao, data_atual))
             
-            # Se for categoria de Equipamento/Patrimônio, podemos pegar o ID para o próximo passo
             if categoria == 'Equipamentos/Patrimônio':
                 session['ultimo_item_patrimonio'] = {
                     'item': descricao,
@@ -183,7 +211,6 @@ def transacoes():
                 }
                 conn.commit()
                 conn.close()
-                # Redireciona direto para a ficha de patrimônio que vamos criar!
                 return redirect(url_for('cadastrar_patrimonio'))
 
         conn.commit()
@@ -208,7 +235,7 @@ def cadastrar_patrimonio():
         valor = float(request.form['patrimonio_valor'])
         num_serie = request.form['patrimonio_serie']
         localizacao = request.form['patrimonio_local']
-        nota_fiscal = "caminho/nota_fiscal.jpg" # Upload simplificado por enquanto
+        nota_fiscal = "caminho/nota_fiscal.jpg"
         data_cad = item_dados['data']
         
         cursor.execute("INSERT INTO patrimonio (item, valor, numero_serie, localizacao, nota_fiscal_path, data_cadastro) VALUES (?, ?, ?, ?, ?, ?)",
@@ -217,7 +244,7 @@ def cadastrar_patrimonio():
         conn.commit()
         conn.close()
         session.pop('ultimo_item_patrimonio', None)
-        flash("Item registrado no patrimônio da igreja!")
+        flash("Item registrado no patrimonio da igreja!")
         return redirect(url_for('transacoes'))
         
     return render_template('patrimonio_pergunta.html', item=item_dados)
@@ -230,7 +257,6 @@ def configuracoes():
     conn = conectar_banco()
     cursor = conn.cursor()
     
-    # Se o formulário de cadastrar utilizador for enviado
     if request.method == 'POST':
         nome = request.form['novo_nome']
         login_user = request.form['novo_login']
@@ -247,7 +273,6 @@ def configuracoes():
             
         return redirect(url_for('configuracoes'))
         
-    # Puxar todos os utilizadores cadastrados para listar na página
     cursor.execute("SELECT id, nome, login, cargo FROM usuarios")
     lista_usuarios = cursor.fetchall()
     conn.close()
@@ -261,8 +286,6 @@ def dizimistas():
         
     conn = conectar_banco()
     cursor = conn.cursor()
-    
-    # Puxa a lista de dízimos cadastrados
     cursor.execute("SELECT id, fiel, valor, ministerio, data FROM dizimos ORDER BY data DESC")
     lista_dizimos = cursor.fetchall()
     conn.close()
@@ -276,8 +299,6 @@ def ministerios():
         
     conn = conectar_banco()
     cursor = conn.cursor()
-    
-    # Agrupa o total de dízimos arrecadados por cada ministério
     cursor.execute("SELECT ministerio, SUM(valor), COUNT(id) FROM dizimos GROUP BY ministerio")
     resumo_ministerios = cursor.fetchall()
     conn.close()
@@ -292,7 +313,6 @@ def historico():
     conn = conectar_banco()
     cursor = conn.cursor()
     
-    # Puxa os dízimos, ofertas e despesas para listar e permitir a exclusão
     cursor.execute("SELECT id, fiel, valor, ministerio, data FROM dizimos ORDER BY id DESC")
     dizimos = cursor.fetchall()
     
@@ -310,7 +330,6 @@ def excluir_registro(tipo, id_registro):
     if 'usuario_nome' not in session:
         return redirect(url_for('login'))
         
-    # Regra de Segurança: Apenas Administrador ou Tesoureira podem apagar dados
     if session.get('usuario_cargo') not in ['ADMINISTRADOR', 'TESOUREIRA']:
         flash("Erro: Você não tem permissão para apagar registros!")
         return redirect(url_for('historico'))
