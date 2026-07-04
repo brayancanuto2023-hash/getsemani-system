@@ -11,9 +11,16 @@
         .sidebar a:hover { background-color: #242936; color: #fff; }
         .main-content { margin-left: 250px; padding: 40px; width: calc(100% - 250px); box-sizing: border-box; }
         .box-lista { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        
+        /* Estilos Novos para o Campo de Busca */
+        .topo-acoes { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .input-busca { padding: 10px 15px; width: 300px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; }
+        .input-busca:focus { border-color: #1a1e29; box-shadow: 0 0 5px rgba(26,30,41,0.2); }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         table th { background-color: #1a1e29; color: white; }
+        .row-total { background-color: #f8f9fa; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -32,9 +39,12 @@
         <h2>Dizimistas Fiéis</h2>
         
         <div class="box-lista">
-            <p style="color: #666;">Histórico de dízimos devolvidos na igreja (Ordenado por data):</p>
+            <div class="topo-acoes">
+                <p style="color: #666; margin: 0;">Histórico de dízimos devolvidos na igreja (Ordenado por data):</p>
+                <input type="text" id="campoBusca" class="input-busca" placeholder="🔎 Buscar por nome do fiel..." onkeyup="filtrarTabela()">
+            </div>
             
-            <table>
+            <table id="tabelaDizimos">
                 <thead>
                     <tr>
                         <th>Nome do Fiel</th>
@@ -45,13 +55,13 @@
                 </thead>
                 <tbody>
                     {% for dizimo in dizimos %}
-                    <tr>
+                    <tr class="linha-dados">
                         <td><strong>{{ dizimo[1] }}</strong></td>
                         <td>
                             {% if cargo_usuario in ['ADMINISTRADOR', 'PASTOR', 'TESOUREIRA'] %}
-                                <span style="color: #2ecc71; font-weight: bold;">R$ {{ "%.2f"|format(dizimo[2]) }}</span>
+                                <span class="valor-dizimo" data-valor="{{ dizimo[2] }}" style="color: #2ecc71; font-weight: bold;">R$ {{ "%.2f"|format(dizimo[2]) }}</span>
                             {% else %}
-                                <span style="color: #95a5a6;">R$ *******</span>
+                                <span class="valor-dizimo" data-valor="0" style="color: #95a5a6;">R$ *******</span>
                             {% endif %}
                         </td>
                         <td>{{ dizimo[3] }}</td>
@@ -59,9 +69,66 @@
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot>
+                    <tr class="row-total">
+                        <td>Total Visualizado:</td>
+                        <td id="totalSoma" style="color: #2ecc71; font-size: 16px;">R$ 0.00</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
+
+    <script>
+        function calcularTotal() {
+            let linhas = document.querySelectorAll('.linha-dados');
+            let total = 0;
+            let temPermissao = false;
+
+            linhas.forEach(linha => {
+                if (linha.style.display !== 'none') {
+                    let elementoValor = linha.querySelector('.valor-dizimo');
+                    let valor = parseFloat(elementoValor.getAttribute('data-valor'));
+                    total += valor;
+                    
+                    // Verifica se o usuário tem permissão para ver os valores reais
+                    if(elementoValor.textContent.includes('******') === false) {
+                        temPermissao = true;
+                    }
+                }
+            });
+
+            let campoTotal = document.getElementById('totalSoma');
+            if (temPermissao) {
+                campoTotal.innerText = 'R$ ' + total.toFixed(2).replace('.', ',');
+            } else {
+                campoTotal.innerText = 'R$ *******';
+                campoTotal.style.color = '#95a5a6';
+            }
+        }
+
+        function filtrarTabela() {
+            let input = document.getElementById('campoBusca');
+            let filtro = input.value.toLowerCase();
+            let linhas = document.querySelectorAll('.linha-dados');
+
+            linhas.forEach(linha => {
+                let nomeFiel = linha.getElementsByTagName('td')[0].textContent.toLowerCase();
+                if (nomeFiel.includes(filtro)) {
+                    linha.style.display = '';
+                } else {
+                    linha.style.display = 'none';
+                }
+            });
+
+            calcularTotal(); // Recalcula a soma mostrando apenas as linhas filtradas!
+        }
+
+        // Roda a soma assim que a página abre
+        window.onload = calcularTotal;
+    </script>
 
 </body>
 </html>
