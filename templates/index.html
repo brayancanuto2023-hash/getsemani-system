@@ -90,6 +90,22 @@
             margin: 10px 0 0 0;
             font-size: 28px;
         }
+        
+        /* BLOCO DO GRÁFICO PREMIUM */
+        .box-grafico {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-top: 30px;
+        }
+        .box-grafico h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #1a1e29;
+            font-size: 18px;
+        }
+        
         .btn-sair {
             background-color: #d9534f !important;
             color: white !important;
@@ -101,6 +117,7 @@
             background-color: #c9302c !important;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -114,8 +131,7 @@
         <a href="/ministerios">Ministérios</a>
         <a href="/transacoes">Lançar Transações</a>
         <a href="/configuracoes">Configurações</a>
-
-<a href="/historico">Histórico e Ajustes</a>
+        <a href="/historico">Histórico e Ajustes</a>
         
         <a href="/logout" class="btn-sair">Sair do Painel</a>
     </div>
@@ -149,7 +165,69 @@
                 <h2 style="color: #e74c3c;">R$ {{ "%.2f"|format(saidas) }}</h2>
             </div>
         </div>
+
+        <div class="box-grafico">
+            <h3>📈 Histórico Financeiro - Altos e Baixos (Últimos 6 Meses)</h3>
+            <div style="width: 100%; height: 350px;">
+                <canvas id="graficoFluxoCaixa"></canvas>
+            </div>
+        </div>
     </div>
+
+    <script>
+        // Captura os dados processados e enviados pelo Flask no Python
+        const labelsMeses = {{ grafico_meses | tojson }};
+        const dadosEntradas = {{ grafico_entradas | tojson }};
+        const dadosSaidas = {{ grafico_saidas | tojson }};
+
+        // Renderiza o gráfico usando o Chart.js
+        const ctx = document.getElementById('graficoFluxoCaixa').getContext('2d');
+        const meuGrafico = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labelsMeses,
+                datasets: [
+                    {
+                        label: 'Entradas (Arrecadação)',
+                        data: dadosEntradas,
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3, // Deixa as linhas curvas e suaves
+                        fill: true
+                    },
+                    {
+                        label: 'Saídas (Despesas)',
+                        data: dadosSaidas,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(2).replace('.', ',');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 
 </body>
 </html>
