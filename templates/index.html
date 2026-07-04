@@ -186,10 +186,14 @@
     </div>
 
     <div class="main-content">
-        <div class="header-rota">
-            PAINEL ADM > ADMINISTRADOR
-        </div>
-
+    <div style="margin-bottom: 25px;">
+    <h2 style="margin: 0; color: #1a1e29; font-size: 28px;">
+        👋 Bem-vindo, {{ session.get('usuario_nome', 'Utilizador') }}!
+    </h2>
+    <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">
+        Que bom ter você de volta. Aqui está o resumo do ecossistema hoje.
+    </p>
+</div>
         <div class="card-principal">
             <p>SALDO REAL EM CAIXA</p>
             {% if cargo_usuario in ['ADMINISTRADOR', 'PASTOR', 'TESOUREIRA'] %}
