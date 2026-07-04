@@ -18,7 +18,7 @@
         .form-group input, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
         .btn-salvar { padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; }
         .btn-salvar:hover { background: #2563eb; }
-        .alert-info { background: #3b82f6; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .alert-info { background: #2ecc71; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         table th { background-color: #1a1e29; color: white; }
@@ -51,6 +51,21 @@
             {% endfor %}
           {% endif %}
         {% endwith %}
+
+        <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #1a1e29;">📊 Definir Teto de Gastos Mensal (Orçamento)</h3>
+            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Estipula o valor máximo que a igreja pode gastar por mês. A barra de progresso no Dashboard principal vai acompanhar este limite dinamicamente.</p>
+            
+            <form action="/configuracoes" method="POST" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #555;">Valor Limite Máximo (R$)</label>
+                    <input type="number" name="meta_orcamento" step="0.01" value="{{ meta_atual }}" required style="width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px;">
+                </div>
+                <button type="submit" style="background-color: #2ecc71; color: white; border: none; padding: 12px 25px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s;">
+                    💾 Salvar Configuração
+                </button>
+            </form>
+        </div>
 
         <div class="container-flex">
             <div class="box-config">
