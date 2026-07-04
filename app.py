@@ -56,6 +56,14 @@ def inicializar_banco():
         nota_fiscal_path TEXT, 
         data_cadastro TEXT)''')
 
+    # 6. NOVA TABELA: Configurações do Sistema (Para guardar a Meta de Orçamento)
+    cursor.execute('''CREATE TABLE IF NOT EXISTS config_sistema (
+        chave TEXT PRIMARY KEY,
+        valor TEXT)''')
+
+    # Garante meta padrão de orçamento caso não exista
+    cursor.execute("INSERT OR IGNORE INTO config_sistema (chave, valor) VALUES ('meta_orcamento', '5000.00')")
+
     # Garante usuário Administrador padrão
     cursor.execute("SELECT * FROM usuarios WHERE login = 'brayan'")
     if not cursor.fetchone():
@@ -117,43 +125,41 @@ def dashboard():
     # SALDO REAL GERAL
     cursor.execute("SELECT SUM(valor) FROM dizimos")
     total_dizimos_geral = cursor.fetchone()[0] or 0.0
-    
     cursor.execute("SELECT SUM(valor) FROM ofertas")
     total_ofertas_geral = cursor.fetchone()[0] or 0.0
-    
     cursor.execute("SELECT SUM(valor) FROM despesas")
     total_despesas_geral = cursor.fetchone()[0] or 0.0
     
     saldo_geral_caixa = (total_dizimos_geral + total_ofertas_geral) - total_despesas_geral
     
-    # ==========================================
-    # NOVO: CÁLCULO DOS ALTOS E BAIXOS (ÚLTIMOS 6 MESES)
-    # ==========================================
-    grafico_meses = []
-    grafico_entradas = []
-    grafico_saidas = []
+    # RECUPERA A META DE ORÇAMENTO CONFIGURADA
+    cursor.execute("SELECT valor FROM config_sistema WHERE chave = 'meta_orcamento'")
+    meta_orcamento = float(cursor.fetchone()[0] or 5000.00)
     
-    # Gera os filtros ano-mês dos últimos 6 meses cronologicamente
+    # CÁLCULO DO GRÁFICO DE ALTOS E BAIXOS (ÚLTIMOS 6 MESES)
+    grafico_meses, grafico_entradas, grafico_saidas = [], [], []
     for i in range(5, -1, -1):
-        # Subtrai meses de forma simples baseado em blocos de 30 dias
         data_passada = datetime.now() - timedelta(days=i*30)
         ano_mes = data_passada.strftime('%Y-%m')
-        nome_mes_visivel = data_passada.strftime('%b/%y') # Ex: Jan/26, Fev/26
+        nome_mes_visivel = data_passada.strftime('%b/%y')
         
-        # Soma entradas do respectivo mês
         cursor.execute("SELECT SUM(valor) FROM dizimos WHERE data LIKE ?", (f"{ano_mes}%",))
         d_m = cursor.fetchone()[0] or 0.0
         cursor.execute("SELECT SUM(valor) FROM ofertas WHERE data LIKE ?", (f"{ano_mes}%",))
         o_m = cursor.fetchone()[0] or 0.0
-        
-        # Soma despesas do respectivo mês
         cursor.execute("SELECT SUM(valor) FROM despesas WHERE data LIKE ?", (f"{ano_mes}%",))
         s_m = cursor.fetchone()[0] or 0.0
         
         grafico_meses.append(nome_mes_visivel)
         grafico_entradas.append(d_m + o_m)
         grafico_saidas.append(s_m)
-    # ==========================================
+
+    # NOVO: DADOS PARA O GRÁFICO DE PIZZA (DESPESAS POR CATEGORIA DO MÊS ATUAL)
+    cursor.execute("SELECT categoria, SUM(valor) FROM despesas WHERE data LIKE ? GROUP BY categoria", (f"{mes_atual}%",))
+    dados_categorias = cursor.fetchall()
+    
+    pizza_labels = [row[0] for row in dados_categorias]
+    pizza_valores = [row[1] for row in dados_categorias]
 
     conn.close()
     
@@ -164,7 +170,10 @@ def dashboard():
                            cargo_usuario=session.get('usuario_cargo'),
                            grafico_meses=grafico_meses,
                            grafico_entradas=grafico_entradas,
-                           grafico_saidas=grafico_saidas)
+                           grafico_saidas=grafico_saidas,
+                           pizza_labels=pizza_labels,
+                           pizza_valores=pizza_valores,
+                           meta_orcamento=meta_orcamento)
 
 @app.route('/logout')
 def logout():
@@ -204,11 +213,7 @@ def transacoes():
                            (categoria, valor, descricao, data_atual))
             
             if categoria == 'Equipamentos/Patrimônio':
-                session['ultimo_item_patrimonio'] = {
-                    'item': descricao,
-                    'valor': valor,
-                    'data': data_atual
-                }
+                session['ultimo_item_patrimonio'] = { 'item': descricao, 'valor': valor, 'data': data_atual }
                 conn.commit()
                 conn.close()
                 return redirect(url_for('cadastrar_patrimonio'))
@@ -258,39 +263,56 @@ def configuracoes():
     cursor = conn.cursor()
     
     if request.method == 'POST':
-        nome = request.form['novo_nome']
-        login_user = request.form['novo_login']
-        senha = request.form['nova_senha']
-        cargo = request.form['novo_cargo']
-        
-        try:
-            cursor.execute("INSERT INTO usuarios (nome, login, senha, cargo) VALUES (?, ?, ?, ?)",
-                           (nome, login_user, senha, cargo))
+        # Verifica se veio do form de orçamento ou de novos usuários
+        if 'meta_orcamento' in request.form:
+            nova_meta = request.form['meta_orcamento']
+            cursor.execute("INSERT OR REPLACE INTO config_sistema (chave, valor) VALUES ('meta_orcamento', ?)", (nova_meta,))
             conn.commit()
-            flash("Novo utilizador cadastrado com sucesso!")
-        except sqlite3.IntegrityError:
-            flash("Erro: Este login já existe no sistema!")
+            flash("Meta de orçamento mensal atualizada!")
+        else:
+            nome = request.form['novo_nome']
+            login_user = request.form['novo_login']
+            senha = request.form['nova_senha']
+            cargo = request.form['novo_cargo']
+            try:
+                cursor.execute("INSERT INTO usuarios (nome, login, senha, cargo) VALUES (?, ?, ?, ?)", (nome, login_user, senha, cargo))
+                conn.commit()
+                flash("Novo utilizador cadastrado com sucesso!")
+            except sqlite3.IntegrityError:
+                flash("Erro: Este login já existe no sistema!")
             
         return redirect(url_for('configuracoes'))
         
     cursor.execute("SELECT id, nome, login, cargo FROM usuarios")
     lista_usuarios = cursor.fetchall()
-    conn.close()
     
-    return render_template('configuracoes.html', usuarios=lista_usuarios)
+    cursor.execute("SELECT valor FROM config_sistema WHERE chave = 'meta_orcamento'")
+    meta_atual = cursor.fetchone()[0] or "5000.00"
+    
+    conn.close()
+    return render_template('configuracoes.html', usuarios=lista_usuarios, meta_atual=meta_atual)
 
 @app.route('/dizimistas')
 def dizimistas():
     if 'usuario_nome' not in session:
         return redirect(url_for('login'))
         
+    # SUPORTE AO FILTRO DE DATAS PERSONALIZADO
+    data_inicio = request.args.get('data_inicio')
+    data_fim = request.args.get('data_fim')
+    
     conn = conectar_banco()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, fiel, valor, ministerio, data FROM dizimos ORDER BY data DESC")
+    
+    if data_inicio and data_fim:
+        cursor.execute("SELECT id, fiel, valor, ministerio, data FROM dizimos WHERE data BETWEEN ? AND ? ORDER BY data DESC", (data_inicio, data_fim))
+    else:
+        cursor.execute("SELECT id, fiel, valor, ministerio, data FROM dizimos ORDER BY data DESC")
+        
     lista_dizimos = cursor.fetchall()
     conn.close()
     
-    return render_template('dizimistas.html', dizimos=lista_dizimos, cargo_usuario=session.get('usuario_cargo'))
+    return render_template('dizimistas.html', dizimos=lista_dizimos, cargo_usuario=session.get('usuario_cargo'), data_inicio=data_inicio, data_fim=data_fim)
 
 @app.route('/ministerios')
 def ministerios():
@@ -315,10 +337,8 @@ def historico():
     
     cursor.execute("SELECT id, fiel, valor, ministerio, data FROM dizimos ORDER BY id DESC")
     dizimos = cursor.fetchall()
-    
     cursor.execute("SELECT id, valor, culto, data FROM ofertas ORDER BY id DESC")
     ofertas = cursor.fetchall()
-    
     cursor.execute("SELECT id, categoria, valor, descricao, data FROM despesas ORDER BY id DESC")
     despesas = cursor.fetchall()
     
