@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Getsêmani - Dizimistas Fiéis</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; display: flex; }
+        .sidebar { width: 250px; height: 100vh; background-color: #1a1e29; color: #fff; padding-top: 20px; position: fixed; }
+        .sidebar h2 { text-align: center; margin-bottom: 5px; }
+        .sidebar a { display: block; color: #a0a5b5; padding: 15px 25px; text-decoration: none; }
+        .sidebar a:hover { background-color: #242936; color: #fff; }
+        .main-content { margin-left: 250px; padding: 40px; width: calc(100% - 250px); box-sizing: border-box; }
+        .box-lista { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        table th { background-color: #1a1e29; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>GETSÊMANI</h2>
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="width: 85px; height: 85px; display: block; margin: 15px auto; border-radius: 50%;">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/dizimistas">Dizimistas Fiéis</a>
+        <a href="/ministerios">Ministérios</a>
+        <a href="/transacoes">Lançar Transações</a>
+        <a href="/configuracoes">Configurações</a>
+    </div>
+
+    <div class="main-content">
+        <h2>Dizimistas Fiéis</h2>
+        
+        <div class="box-lista">
+            <p style="color: #666;">Histórico de dízimos devolvidos na igreja (Ordenado por data):</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome do Fiel</th>
+                        <th>Valor Contribuído</th>
+                        <th>Ministério / Congregação</th>
+                        <th>Data do Lançamento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dizimo in dizimos %}
+                    <tr>
+                        <td><strong>{{ dizimo[1] }}</strong></td>
+                        <td>
+                            {% if cargo_usuario in ['ADMINISTRADOR', 'PASTOR', 'TESOUREIRA'] %}
+                                <span style="color: #2ecc71; font-weight: bold;">R$ {{ "%.2f"|format(dizimo[2]) }}</span>
+                            {% else %}
+                                <span style="color: #95a5a6;">R$ *******</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ dizimo[3] }}</td>
+                        <td>{{ dizimo[4] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

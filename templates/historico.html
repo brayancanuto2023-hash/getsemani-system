@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Getsêmani - Histórico e Ajustes</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; display: flex; }
+        .sidebar { width: 250px; height: 100vh; background-color: #1a1e29; color: #fff; padding-top: 20px; position: fixed; }
+        .sidebar h2 { text-align: center; margin-bottom: 5px; }
+        .sidebar a { display: block; color: #a0a5b5; padding: 15px 25px; text-decoration: none; }
+        .sidebar a:hover { background-color: #242936; color: #fff; }
+        .main-content { margin-left: 250px; padding: 40px; width: calc(100% - 250px); box-sizing: border-box; }
+        .box-historico { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        h3 { color: #1a1e29; border-bottom: 2px solid #f4f6f9; padding-bottom: 8px; margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        table th { background-color: #2c3240; color: white; font-size: 14px; }
+        .btn-excluir { background-color: #e74c3c; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px; transition: 0.2s; }
+        .btn-excluir:hover { background-color: #c0392b; }
+        .alert-aviso { background: #f39c12; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>GETSÊMANI</h2>
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="width: 85px; height: 85px; display: block; margin: 15px auto; border-radius: 50%;">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/dizimistas">Dizimistas Fiéis</a>
+        <a href="/ministerios">Ministérios</a>
+        <a href="/transacoes">Lançar Transações</a>
+        <a href="/historico">Histórico e Ajustes</a>
+        <a href="/configuracoes">Configurações</a>
+    </div>
+
+    <div class="main-content">
+        <h2>Histórico de Lançamentos e Ajustes</h2>
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert-aviso">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="box-historico">
+            <h3>Dízimos Lançados</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dizimista</th>
+                        <th>Valor</th>
+                        <th>Ministério</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in dizimos %}
+                    <tr>
+                        <td><strong>{{ d[1] }}</strong></td>
+                        <td style="color: #2ecc71; font-weight: bold;">R$ {{ "%.2f"|format(d[2]) }}</td>
+                        <td>{{ d[3] }}</td>
+                        <td>{{ d[4] }}</td>
+                        <td>
+                            <a href="/excluir/dizimo/{{ d[0] }}" class="btn-excluir" onclick="return confirm('Tem certeza que deseja apagar permanentemente este dízimo?')">Apagar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="box-historico">
+            <h3>Ofertas Anônimas Lançadas</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Culto</th>
+                        <th>Valor</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in ofertas %}
+                    <tr>
+                        <td><strong>{{ o[2] }}</strong></td>
+                        <td style="color: #2ecc71; font-weight: bold;">R$ {{ "%.2f"|format(o[1]) }}</td>
+                        <td>{{ o[3] }}</td>
+                        <td>
+                            <a href="/excluir/oferta/{{ o[0] }}" class="btn-excluir" onclick="return confirm('Tem certeza que deseja apagar esta oferta?')">Apagar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="box-historico">
+            <h3>Saídas e Despesas Lançadas</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Categoria</th>
+                        <th>Descrição</th>
+                        <th>Valor Pago</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for desp in despesas %}
+                    <tr>
+                        <td><span style="background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 13px;">{{ desp[1] }}</span></td>
+                        <td>{{ desp[3] }}</td>
+                        <td style="color: #e74c3c; font-weight: bold;">R$ {{ "%.2f"|format(desp[2]) }}</td>
+                        <td>{{ desp[4] }}</td>
+                        <td>
+                            <a href="/excluir/despesa/{{ desp[0] }}" class="btn-excluir" onclick="return confirm('Tem certeza que deseja apagar esta despesa?')">Apagar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
