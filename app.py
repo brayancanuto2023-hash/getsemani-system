@@ -331,4 +331,5 @@ def excluir_registro(tipo, id_registro):
     return redirect(url_for('historico'))
 
 if __name__ == '__main__':
+        inicializador_banco()
     app.run(debug=True)
