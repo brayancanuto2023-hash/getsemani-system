@@ -12,12 +12,21 @@
         .main-content { margin-left: 250px; padding: 40px; width: calc(100% - 250px); box-sizing: border-box; }
         .box-historico { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
         h3 { color: #1a1e29; border-bottom: 2px solid #f4f6f9; padding-bottom: 8px; margin-top: 0; }
+        
+        /* ESTILOS DA BARRA DE FILTRO */
+        .topo-controle { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .input-busca { padding: 12px 15px; width: 350px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; }
+        .input-busca:focus { border-color: #1a1e29; box-shadow: 0 0 5px rgba(26,30,41,0.2); }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         table th { background-color: #2c3240; color: white; font-size: 14px; }
         .btn-excluir { background-color: #e74c3c; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px; transition: 0.2s; }
         .btn-excluir:hover { background-color: #c0392b; }
         .alert-aviso { background: #f39c12; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        
+        /* ESTILO DO RODAPÉ DE TOTAIS */
+        .row-total { background-color: #f8f9fa; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -44,6 +53,11 @@
           {% endif %}
         {% endwith %}
 
+        <div class="topo-controle">
+            <p style="color: #666; margin: 0;">Use o campo ao lado para filtrar dízimos, ofertas ou despesas simultaneamente:</p>
+            <input type="text" id="filtroGeral" class="input-busca" placeholder="🔎 Digite nome, culto, categoria ou data..." onkeyup="filtrarTudo()">
+        </div>
+
         <div class="box-historico">
             <h3>Dízimos Lançados</h3>
             <table>
@@ -56,11 +70,11 @@
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="corpoDizimos">
                     {% for d in dizimos %}
-                    <tr>
+                    <tr class="linha-dizimo">
                         <td><strong>{{ d[1] }}</strong></td>
-                        <td style="color: #2ecc71; font-weight: bold;">R$ {{ "%.2f"|format(d[2]) }}</td>
+                        <td class="val-dizimo" data-valor="{{ d[2] }}" style="color: #2ecc71; font-weight: bold;">R$ {{ "%.2f"|format(d[2]) }}</td>
                         <td>{{ d[3] }}</td>
                         <td>{{ d[4] }}</td>
                         <td>
@@ -69,6 +83,15 @@
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot>
+                    <tr class="row-total">
+                        <td>Total de Dízimos:</td>
+                        <td id="totalDizimos" style="color: #2ecc71; font-size: 15px;">R$ 0,00</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 
@@ -83,11 +106,11 @@
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="corpoOfertas">
                     {% for o in ofertas %}
-                    <tr>
+                    <tr class="linha-oferta">
                         <td><strong>{{ o[2] }}</strong></td>
-                        <td style="color: #2ecc71; font-weight: bold;">R$ {{ "%.2f"|format(o[1]) }}</td>
+                        <td class="val-oferta" data-valor="{{ o[1] }}" style="color: #2ecc71; font-weight: bold;">R$ {{ "%.2f"|format(o[1]) }}</td>
                         <td>{{ o[3] }}</td>
                         <td>
                             <a href="/excluir/oferta/{{ o[0] }}" class="btn-excluir" onclick="return confirm('Tem certeza que deseja apagar esta oferta?')">Apagar</a>
@@ -95,6 +118,14 @@
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot>
+                    <tr class="row-total">
+                        <td>Total de Ofertas:</td>
+                        <td id="totalOfertas" style="color: #2ecc71; font-size: 15px;">R$ 0,00</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 
@@ -110,12 +141,12 @@
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="corpoDespesas">
                     {% for desp in despesas %}
-                    <tr>
+                    <tr class="linha-despesa">
                         <td><span style="background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 13px;">{{ desp[1] }}</span></td>
                         <td>{{ desp[3] }}</td>
-                        <td style="color: #e74c3c; font-weight: bold;">R$ {{ "%.2f"|format(desp[2]) }}</td>
+                        <td class="val-despesa" data-valor="{{ desp[2] }}" style="color: #e74c3c; font-weight: bold;">R$ {{ "%.2f"|format(desp[2]) }}</td>
                         <td>{{ desp[4] }}</td>
                         <td>
                             <a href="/excluir/despesa/{{ desp[0] }}" class="btn-excluir" onclick="return confirm('Tem certeza que deseja apagar esta despesa?')">Apagar</a>
@@ -123,9 +154,58 @@
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot>
+                    <tr class="row-total">
+                        <td>Total de Saídas:</td>
+                        <td></td>
+                        <td id="totalDespesas" style="color: #e74c3c; font-size: 15px;">R$ 0,00</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
+
+    <script>
+        function calcularTotais() {
+            // Calcular Dízimos
+            let totDizimos = 0;
+            document.querySelectorAll('.linha-dizimo').forEach(l => {
+                if(l.style.display !== 'none') totDizimos += parseFloat(l.querySelector('.val-dizimo').getAttribute('data-valor') || 0);
+            });
+            document.getElementById('totalDizimos').innerText = 'R$ ' + totDizimos.toFixed(2).replace('.', ',');
+
+            // Calcular Ofertas
+            let totOfertas = 0;
+            document.querySelectorAll('.linha-oferta').forEach(l => {
+                if(l.style.display !== 'none') totOfertas += parseFloat(l.querySelector('.val-oferta').getAttribute('data-valor') || 0);
+            });
+            document.getElementById('totalOfertas').innerText = 'R$ ' + totOfertas.toFixed(2).replace('.', ',');
+
+            // Calcular Despesas
+            let totDespesas = 0;
+            document.querySelectorAll('.linha-despesa').forEach(l => {
+                if(l.style.display !== 'none') totDespesas += parseFloat(l.querySelector('.val-despesa').getAttribute('data-valor') || 0);
+            });
+            document.getElementById('totalDespesas').innerText = 'R$ ' + totDespesas.toFixed(2).replace('.', ',');
+        }
+
+        function filtrarTudo() {
+            let filtro = document.getElementById('filtroGeral').value.toLowerCase();
+            
+            // Filtra as 3 tabelas baseando-se em todo o conteúdo textual da linha
+            document.querySelectorAll('.linha-dizimo, .linha-oferta, .linha-despesa').forEach(linha => {
+                let textoLinha = linha.textContent.toLowerCase();
+                linha.style.display = textoLinha.includes(filtro) ? '' : 'none';
+            });
+
+            calcularTotais();
+        }
+
+        // Executa o cálculo inicial ao carregar a página
+        window.onload = calcularTotais;
+    </script>
 
 </body>
 </html>
