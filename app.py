@@ -18,18 +18,15 @@ def get_db_connection():
         conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         return conn
     except Exception as e:
-        print(f"Erro de conexão com o banco: {e}")
+        print(f"Erro de conexao: {e}")
         return None
 
 def inicializar_banco():
-    """ Cria as tabelas necessárias e garante que o usuário admin exista """
     conn = get_db_connection()
     if not conn:
         return
     try:
         cursor = conn.cursor()
-        
-        # Tabela de Usuários
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -39,8 +36,6 @@ def inicializar_banco():
                 cargo VARCHAR(50) NOT NULL
             );
         ''')
-        
-        # Tabela de Transações
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS transacoes (
                 id SERIAL PRIMARY KEY,
@@ -51,29 +46,24 @@ def inicializar_banco():
                 data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
-        
-        # Garante que o usuário 'brayan' com senha '1234' exista sempre
         cursor.execute("SELECT id FROM usuarios WHERE login = 'brayan'")
         if not cursor.fetchone():
             cursor.execute('''
                 INSERT INTO usuarios (nome, login, senha, cargo)
                 VALUES ('Brayan', 'brayan', '1234', 'ADMINISTRADOR')
             ''')
-        
         conn.commit()
         cursor.close()
         conn.close()
-        print("Banco de dados inicializado com sucesso!")
     except Exception as e:
         print(f"Erro ao inicializar banco: {e}")
 
-# Executa a inicialização ao subir a aplicação
 try:
     inicializar_banco()
 except Exception as e:
     print(f"Falha na inicializacao: {e}")
 
-# --- ROTAS DA APLICAÇÃO ---
+# --- ROTAS DO SISTEMA ---
 
 @app.route('/')
 def home():
@@ -84,18 +74,25 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        login_input = request.form.get('login', '').strip()
+        login_input = request.form.get('login', '').strip().lower()
         senha_input = request.form.get('senha', '').strip()
-        
+
+        # LIBERAÇÃO MASTER DE LOGIN DE EMERGÊNCIA
+        if login_input == 'brayan' and senha_input == '1234':
+            session['usuario_id'] = 1
+            session['nome'] = 'Brayan'
+            session['cargo_usuario'] = 'ADMINISTRADOR'
+            return redirect(url_for('dashboard'))
+
         conn = get_db_connection()
         if conn:
             try:
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM usuarios WHERE login = %s AND senha = %s", (login_input, senha_input))
+                cursor.execute("SELECT * FROM usuarios WHERE LOWER(login) = %s AND senha = %s", (login_input, senha_input))
                 usuario = cursor.fetchone()
                 cursor.close()
                 conn.close()
-                
+
                 if usuario:
                     session['usuario_id'] = usuario['id']
                     session['nome'] = usuario['nome']
@@ -103,7 +100,7 @@ def login():
                     return redirect(url_for('dashboard'))
             except Exception as e:
                 print(f"Erro no login: {e}")
-        
+
         flash('Login ou senha incorretos!', 'danger')
     return render_template('login.html')
 
@@ -116,7 +113,7 @@ def logout():
 def dashboard():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    
+
     entradas, saidas = 0.0, 0.0
     conn = get_db_connection()
     if conn:
@@ -134,18 +131,18 @@ def dashboard():
             conn.close()
         except Exception as e:
             print(f"Erro no dashboard: {e}")
-            
+
     return render_template('index.html', entradas=entradas, saidas=saidas, meta_orcamento=5000.00, cargo_usuario=session.get('cargo_usuario', 'ADMINISTRADOR'))
 
 @app.route('/transacoes', methods=['GET', 'POST'])
 def transacoes():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-        
+
     if request.method == 'POST':
         tipo = request.form.get('tipo_transacao')
         categoria, descricao, valor = '', '', 0.0
-        
+
         if tipo == 'dizimo':
             categoria = f"Dízimo - {request.form.get('dizimo_membro', '')}"
             descricao = f"Ministério: {request.form.get('dizimo_ministerio', '')}"
@@ -172,14 +169,14 @@ def transacoes():
                 except Exception as e:
                     flash(f'Erro ao salvar: {e}', 'danger')
         return redirect(url_for('transacoes'))
-        
+
     return render_template('transacoes.html')
 
 @app.route('/ministerios', methods=['GET'])
 def ministerios():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-        
+
     busca = request.args.get('busca', '').strip()
     conn = get_db_connection()
     ministerios_lista = []
@@ -197,15 +194,15 @@ def ministerios():
             cursor.close()
             conn.close()
         except Exception as e:
-            print(f"Erro ao buscar ministérios: {e}")
-            
+            print(f"Erro ao buscar ministerios: {e}")
+
     return render_template('ministerios.html', ministerios=ministerios_lista, busca=busca)
 
 @app.route('/ministerios/editar', methods=['POST'])
 def editar_ministerio():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    
+
     nome_antigo = request.form.get('nome_antigo')
     nome_novo = request.form.get('nome_novo')
     if nome_antigo and nome_novo:
@@ -217,7 +214,7 @@ def editar_ministerio():
                 conn.commit()
                 cursor.close()
                 conn.close()
-                flash('Ministério atualizado com sucesso!', 'success')
+                flash('Ministério atualizado!', 'success')
             except Exception as e:
                 flash(f'Erro ao atualizar: {e}', 'danger')
     return redirect(url_for('ministerios'))
@@ -226,7 +223,7 @@ def editar_ministerio():
 def excluir_ministerio():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-        
+
     nome_ministerio = request.form.get('nome_ministerio')
     if nome_ministerio:
         conn = get_db_connection()
@@ -237,63 +234,10 @@ def excluir_ministerio():
                 conn.commit()
                 cursor.close()
                 conn.close()
-                flash('Registros excluídos com sucesso!', 'warning')
+                flash('Registros excluídos!', 'warning')
             except Exception as e:
                 flash(f'Erro ao excluir: {e}', 'danger')
     return redirect(url_for('ministerios'))
 
-# Rota de Emergência para Reset de Acesso
-@app.route('/resetar-senha-admin')
-def resetar_senha_admin():
-    conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM usuarios WHERE login = 'brayan';")
-            cursor.execute('''
-                INSERT INTO usuarios (nome, login, senha, cargo)
-                VALUES ('Brayan', 'brayan', '1234', 'ADMINISTRADOR')
-            ''')
-            conn.commit()
-            cursor.close()
-            conn.close()
-            return "<h1>Usuário resetado com sucesso!</h1><p>Login: <b>brayan</b> | Senha: <b>1234</b></p><br><a href='/login'>Ir para o Login</a>"
-        except Exception as e:
-            return f"Erro ao resetar: {e}"
-    return "Erro de Conexão com o Banco"
-
 if __name__ == '__main__':
     app.run(debug=True)
-    @app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        login_input = request.form.get('login', '').strip().lower()
-        senha_input = request.form.get('senha', '').strip()
-        
-        # 1. ACESSO DE EMERGÊNCIA (MASTER)
-        if login_input == 'brayan' and senha_input == '1234':
-            session['usuario_id'] = 1
-            session['nome'] = 'Brayan'
-            session['cargo_usuario'] = 'ADMINISTRADOR'
-            return redirect(url_for('dashboard'))
-
-        # 2. CONSULTA NO BANCO DE DADOS
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute("SELECT * FROM usuarios WHERE LOWER(login) = %s AND senha = %s", (login_input, senha_input))
-                usuario = cursor.fetchone()
-                cursor.close()
-                conn.close()
-                
-                if usuario:
-                    session['usuario_id'] = usuario['id']
-                    session['nome'] = usuario['nome']
-                    session['cargo_usuario'] = usuario['cargo']
-                    return redirect(url_for('dashboard'))
-            except Exception as e:
-                print(f"Erro no login: {e}")
-        
-        flash('Login ou senha incorretos!', 'danger')
-    return render_template('login.html')
