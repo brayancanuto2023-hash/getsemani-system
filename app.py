@@ -25,15 +25,7 @@ def inicializar_banco():
         return
     try:
         cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id SERIAL PRIMARY KEY,
-                nome VARCHAR(100) NOT NULL,
-                login VARCHAR(50) UNIQUE NOT NULL,
-                senha VARCHAR(255) NOT NULL,
-                cargo VARCHAR(50) NOT NULL
-            );
-        ''')
+        # Tabela universal de transações compatível com o painel original
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS transacoes (
                 id SERIAL PRIMARY KEY,
@@ -45,13 +37,12 @@ def inicializar_banco():
             );
         ''')
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS patrimonio (
+            CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
-                nome_item VARCHAR(150) NOT NULL,
-                quantidade INT NOT NULL DEFAULT 1,
-                departamento VARCHAR(100),
-                observacao TEXT,
-                data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                nome VARCHAR(100) NOT NULL,
+                login VARCHAR(50) UNIQUE NOT NULL,
+                senha VARCHAR(255) NOT NULL,
+                cargo VARCHAR(50) NOT NULL
             );
         ''')
         cursor.execute("SELECT id FROM usuarios WHERE login = 'brayan'")
@@ -123,12 +114,10 @@ def dashboard():
     if conn:
         try:
             cursor = conn.cursor()
-            # Soma todas as entradas considerando variações comuns de tipo
             cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE LOWER(tipo) IN ('dizimo', 'oferta', 'entrada', 'dízimo')")
             res_e = cursor.fetchone()
             if res_e: entradas = float(res_e['total'])
 
-            # Soma todas as saídas
             cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE LOWER(tipo) IN ('despesa', 'saida', 'saída')")
             res_s = cursor.fetchone()
             if res_s: saidas = float(res_s['total'])
@@ -146,7 +135,7 @@ def transacoes():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        tipo = request.form.get('tipo_transacao') or request.form.get('tipo', 'entrada')
+        tipo = request.form.get('tipo_transacao') or 'dizimo'
         categoria = request.form.get('categoria', 'Geral')
         descricao = request.form.get('descricao', '')
         valor_str = request.form.get('valor', '0').replace(',', '.')
@@ -165,9 +154,9 @@ def transacoes():
                     conn.commit()
                     cursor.close()
                     conn.close()
-                    flash('Lançamento registrado com sucesso!', 'success')
+                    flash('Lançamento efetuado com sucesso!', 'success')
                 except Exception as e:
-                    flash(f'Erro ao salvar no banco: {e}', 'danger')
+                    flash(f'Erro ao gravar: {e}', 'danger')
         else:
             flash('Informe um valor válido maior que zero.', 'warning')
             
@@ -180,19 +169,19 @@ def historico():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
 
-    lista_transacoes = []
+    lista = []
     conn = get_db_connection()
     if conn:
         try:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM transacoes ORDER BY data DESC")
-            lista_transacoes = cursor.fetchall()
+            lista = cursor.fetchall()
             cursor.close()
             conn.close()
         except Exception as e:
             print(f"Erro historico: {e}")
 
-    return render_template('historico.html', transacoes=lista_transacoes)
+    return render_template('historico.html', transacoes=lista)
 
 @app.route('/dizimistas')
 def dizimistas():
@@ -200,69 +189,17 @@ def dizimistas():
         return redirect(url_for('login'))
     return render_template('dizimistas.html')
 
-@app.route('/usuarios', methods=['GET', 'POST'])
-def usuarios():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        nome = request.form.get('nome')
-        login_usr = request.form.get('login', '').strip().lower()
-        senha = request.form.get('senha')
-        cargo = request.form.get('cargo', 'OPERADOR')
-
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute("INSERT INTO usuarios (nome, login, senha, cargo) VALUES (%s, %s, %s, %s)", (nome, login_usr, senha, cargo))
-                conn.commit()
-                cursor.close()
-                conn.close()
-                flash('Usuário cadastrado com sucesso!', 'success')
-            except Exception as e:
-                flash(f'Erro ao criar usuário: {e}', 'danger')
-        return redirect(url_for('usuarios'))
-
-    lista_usuarios = []
-    conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, nome, login, cargo FROM usuarios ORDER BY id DESC")
-            lista_usuarios = cursor.fetchall()
-            cursor.close()
-            conn.close()
-        except Exception as e:
-            print(f"Erro usuarios: {e}")
-
-    return render_template('configuracoes.html', usuarios=lista_usuarios)
-
-@app.route('/ministerios', methods=['GET'])
+@app.route('/ministerios')
 def ministerios():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
+    return render_template('ministerios.html')
 
-    busca = request.args.get('busca', '').strip()
-    conn = get_db_connection()
-    ministerios_lista = []
-    if conn:
-        try:
-            cursor = conn.cursor()
-            query = "SELECT descricao AS nome, COUNT(id) AS qtd, COALESCE(SUM(valor), 0) AS total FROM transacoes WHERE LOWER(tipo) IN ('dizimo', 'oferta', 'entrada', 'dízimo')"
-            params = []
-            if busca:
-                query += " AND descricao ILIKE %s"
-                params.append(f"%{busca}%")
-            query += " GROUP BY descricao ORDER BY total DESC;"
-            cursor.execute(query, params)
-            ministerios_lista = cursor.fetchall()
-            cursor.close()
-            conn.close()
-        except Exception as e:
-            print(f"Erro ministerios: {e}")
-
-    return render_template('ministerios.html', ministerios=ministerios_lista, busca=busca)
+@app.route('/usuarios')
+def usuarios():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('configuracoes.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
