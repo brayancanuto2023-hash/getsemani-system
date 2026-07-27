@@ -4,6 +4,12 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+def formatar_moeda(valor):
+    if valor is None:
+        valor = 0.0
+    return f"{valor:,.2f}".replace(',', 'v').replace('.', ',').replace('v', '.')
+
+app.jinja_env.filters['moeda'] = formatar_moeda
 app.secret_key = "getsemani_ecossistema_secret_secure_key"
 
 def conectar_banco():
