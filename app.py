@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'chave_secreta_getsemani_123')
 
-# Corrige o prefixo do banco do Render se necessario (postgres:// -> postgresql://)
+# Ajusta URL da base de dados PostgreSQL para o formato padrão do SQLAlchemy/Psycopg2
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
@@ -30,7 +30,7 @@ def inicializar_banco():
     try:
         cursor = conn.cursor()
         
-        # Tabela de Usuarios
+        # Criacao de Tabelas
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -41,7 +41,6 @@ def inicializar_banco():
             );
         ''')
 
-        # Tabela de Transacoes
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS transacoes (
                 id SERIAL PRIMARY KEY,
@@ -53,7 +52,7 @@ def inicializar_banco():
             );
         ''')
 
-        # Usuario admin padrao
+        # Cria usuario padrao se nao existir
         cursor.execute("SELECT id FROM usuarios WHERE login = 'brayan'")
         if not cursor.fetchone():
             cursor.execute('''
@@ -67,11 +66,11 @@ def inicializar_banco():
     except Exception as e:
         print(f"Erro na criacao das tabelas: {e}")
 
-# Executa sem derrubar o servidor caso haja falha
+# Executa a inicializacao sem travar a subida do servidor
 try:
     inicializar_banco()
 except Exception as e:
-    print(f"Falha segura ao inicializar banco: {e}")
+    print(f"Falha na inicializacao do banco: {e}")
 
 @app.route('/')
 def home():
@@ -123,7 +122,6 @@ def dashboard():
     if conn:
         try:
             cursor = conn.cursor()
-
             cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE tipo IN ('dizimo', 'oferta')")
             res_e = cursor.fetchone()
             if res_e:
@@ -137,7 +135,7 @@ def dashboard():
             cursor.close()
             conn.close()
         except Exception as e:
-            print(f"Erro na consulta do dashboard: {e}")
+            print(f"Erro no dashboard: {e}")
 
     meta_orcamento = 5000.00
     cargo_usuario = session.get('cargo_usuario', 'ADMINISTRADOR')
@@ -187,9 +185,9 @@ def transacoes():
                     conn.close()
                     flash('Lançamento registrado com sucesso!', 'success')
                 except Exception as e:
-                    flash(f'Erro ao salvar no banco: {e}', 'danger')
+                    flash(f'Erro ao salvar: {e}', 'danger')
             else:
-                flash('Sem conexão com o banco de dados.', 'danger')
+                flash('Sem conexão com a base de dados.', 'danger')
         else:
             flash('Informe um valor maior que zero.', 'warning')
 
