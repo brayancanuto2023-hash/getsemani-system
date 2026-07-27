@@ -301,3 +301,8 @@ def ministerios():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    @app.route('/dizimistas')
+def dizimistas():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('dizimistas.html')
