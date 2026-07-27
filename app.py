@@ -156,3 +156,32 @@ def transacoes():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    @app.route('/resetar-senha-admin')
+def resetar_senha_admin():
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            # Garante que a tabela de usuários exista
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS usuarios (
+                    id SERIAL PRIMARY KEY,
+                    nome VARCHAR(100),
+                    login VARCHAR(50) UNIQUE,
+                    senha VARCHAR(100),
+                    cargo VARCHAR(50)
+                );
+            ''')
+            # Apaga o usuário 'brayan' antigo se existir e cria novamente com a senha '1234'
+            cursor.execute("DELETE FROM usuarios WHERE login = 'brayan';")
+            cursor.execute('''
+                INSERT INTO usuarios (nome, login, senha, cargo)
+                VALUES ('Brayan', 'brayan', '1234', 'ADMINISTRADOR')
+            ''')
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return "<h1>Usuário criado/resetado com sucesso!</h1><p>Login: <b>brayan</b> | Senha: <b>1234</b></p><br><a href='/login'>Ir para a tela de Login</a>"
+        except Exception as e:
+            return f"Erro ao resetar: {e}"
+    return "Sem conexão com o banco de dados."
