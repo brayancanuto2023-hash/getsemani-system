@@ -211,21 +211,21 @@
                 {% else %}
                     <h2 style="color: #2ecc71;">R$ *******</h2>
                 {% endif %}
-            </div>
-
             <div class="card-menor">
-                <p>Saídas / Despesas Totais (Mês Atual)</p>
+    <p>Saídas / Despesas Totais (Mês Atual)</p>
+    <h2 style="color: #e74c3c;" id="valorSaidasMes">R$ {{ "{:,.2f}".format(saidas or 0).replace(',', 'v').replace('.', ',').replace('v', '.') }}</h2>
+</div>
                 <h2 style="color: #e74c3c;" id="valorSaidasMes">R$ {{ "%.2f"|format(saidas) }}</h2>
             </div>
-        </div>
-
         <div class="card-orcamento">
-            <div class="meta-header">
-                <span>📊 Controle de Teto de Despesas do Mês</span>
+    <div class="meta-header">
+        <span>📊 Controle de Teto de Despesas do Mês</span>
+        <span id="textoMetaInfo">Meta: R$ {{ "{:,.2f}".format(meta_orcamento or 0).replace(',', 'v').replace('.', ',').replace('v', '.') }}</span>
+    </div>
                 <span id="textoMetaInfo">Meta: R$ {{ "%.2f"|format(meta_orcamento) }}</span>
             </div>
             <div class="barra-progresso-fundo">
-                <div class="barra-progresso-preenchimento" id="barraProgressoOrcamento"></div>
+                <div class="alerta-orcamento" id="alertaOrcamentoTexto"></div>
             </div>
             <div class="alerta-orcamento" id="alertaOrcamentoTexto"></div>
         </div>
