@@ -15,34 +15,38 @@
         }
         body {
             background-color: #f4f6f9;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        /* Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            background-color: #1e293b;
-            color: #fff;
-            z-index: 1000;
-            padding-top: 20px;
-        }
-        .sidebar .nav-link {
-            color: #cbd5e1;
-            padding: 12px 20px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-radius: 8px;
-            margin: 4px 15px;
-        }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            color: #fff;
-            background-color: #334155;
-        }
+        <div class="sidebar">
+    <div class="px-4 mb-4 text-center">
+        <div class="mb-2">
+            <i class="bi bi-church-fill text-primary display-5"></i>
+        </div>
+        <h4 class="fw-bold text-white mb-0">Getsêmani</h4>
+        <small class="text-muted">Gestão Eclesiástica</small>
+    </div>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link active" href="/dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/transacoes"><i class="bi bi-arrow-down-up"></i> Lançamentos</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/historico"><i class="bi bi-clock-history"></i> Histórico</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/ministerios"><i class="bi bi-building"></i> Ministérios</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/patrimonio"><i class="bi bi-box-seam"></i> Materiais / Patrimônio</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/usuarios"><i class="bi bi-people-fill"></i> Usuários</a>
+        </li>
+        <li class="nav-item mt-4">
+            <a class="nav-link text-danger" href="/logout"><i class="bi bi-box-arrow-right"></i> Sair</a>
+        </li>
+    </ul>
+</div>
         /* Main Content */
         .main-content {
             margin-left: var(--sidebar-width);
