@@ -1,103 +1,110 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançar Transação - Gestão Getsêmani</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding-top: 30px; }
+        .card-custom { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
 
-{% block content %}
-<div class="container mt-4" style="max-width: 800px;">
-    <h2 class="mb-4">Lançar Nova Movimentação Financeira</h2>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <form method="POST" action="/transacoes">
-        <div class="form-group mb-3">
-            <label for="tipo_transacao"><strong>Selecione o Tipo de Transação</strong></label>
-            <select name="tipo_transacao" id="tipo_transacao" class="form-control" onchange="alternarAbas()">
-                <option value="dizimo">Dízimo (Identificado)</option>
-                <option value="oferta">Oferta (Anônima)</option>
-                <option value="despesa">Saída / Despesa (Plano de Contas)</option>
-            </select>
+<div class="container" style="max-width: 800px;">
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Lançar Nova Movimentação Financeira</h2>
+            <a href="/dashboard" class="btn btn-outline-secondary btn-sm">Voltar ao Dashboard</a>
         </div>
 
-        <hr>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
 
-        <div id="aba_dizimo" class="secao-form">
+        <form method="POST" action="/transacoes">
             <div class="form-group mb-3">
-                <label for="dizimo_membro">Membro / Dizimista</label>
-                <input type="text" name="dizimo_membro" id="dizimo_membro" class="form-control" placeholder="Nome do membro">
-            </div>
-            <div class="form-group mb-3">
-                <label for="dizimo_valor">Valor do Dízimo (R$)</label>
-                <input type="number" step="0.01" name="dizimo_valor" id="dizimo_valor" class="form-control" placeholder="0.00">
-            </div>
-            <div class="form-group mb-3">
-                <label for="dizimo_ministerio">Ministério Vinculado</label>
-                <input type="text" name="dizimo_ministerio" id="dizimo_ministerio" class="form-control" placeholder="Ex: Sede, Congregação Norte">
-            </div>
-        </div>
-
-        <div id="aba_oferta" class="secao-form" style="display: none;">
-            <div class="form-group mb-3">
-                <label for="oferta_valor">Valor da Oferta Anônima (R$)</label>
-                <input type="number" step="0.01" name="oferta_valor" id="oferta_valor" class="form-control" placeholder="0.00">
-            </div>
-            <div class="form-group mb-3">
-                <label for="oferta_culto">Culto Correspondente</label>
-                <select name="oferta_culto" id="oferta_culto" class="form-control">
-                    <option value="Domingo">Culto de Domingo</option>
-                    <option value="Ensino">Culto de Ensino / Terça</option>
-                    <option value="Jovens">Culto de Jovens</option>
-                    <option value="Mulheres">Culto de Mulheres</option>
-                    <option value="Homens">Culto de Homens</option>
-                    <option value="Infantil">Culto Infantil / EBD</option>
-                    <option value="EBD">EBD - Escola Bíblica</option>
-                    <option value="Vigilia">Vigília / Oração</option>
-                    <option value="Congresso">Conferência / Congresso</option>
-                    <option value="Evento">Bazar / Evento Especial</option>
-                    <option value="Outros">Outros Eventos</option>
+                <label for="tipo_transacao" class="form-label"><strong>Selecione o Tipo de Transação</strong></label>
+                <select name="tipo_transacao" id="tipo_transacao" class="form-select" onchange="alternarAbas()">
+                    <option value="dizimo">Dízimo (Identificado)</option>
+                    <option value="oferta">Oferta (Anônima)</option>
+                    <option value="despesa">Saída / Despesa (Plano de Contas)</option>
                 </select>
             </div>
-        </div>
 
-        <div id="aba_despesa" class="secao-form" style="display: none;">
-            <div class="form-group mb-3">
-                <label for="despesa_categoria">Categoria da Conta (Plano de Contas)</label>
-                <select name="despesa_categoria" id="despesa_categoria" class="form-control">
-                    <option value="Luz">Conta de Luz (Enel/Light)</option>
-                    <option value="Agua">Conta de Água (Cedae/Saneamento)</option>
-                    <option value="Internet">Internet / Telefone</option>
+            <hr class="my-4">
 
-                    <option value="Louvor">Ministério de Louvor</option>
-                    <option value="Danca">Ministério de Dança</option>
-                    <option value="Homens">Ministério dos Homens</option>
-                    <option value="Mulheres">Ministério das Mulheres</option>
-                    <option value="Infantil">Ministério Infantil / EBD</option>
-
-                    <option value="Limpeza">Material de Limpeza e Conservação</option>
-                    <option value="Consolidacao">Consolidação e Integração</option>
-                    <option value="Evangelismo">Evangelismo e Missões</option>
-                    <option value="Acao Social">Ação Social / Cestas Básicas</option>
-                    <option value="Cantina">Cantina / Alimentação</option>
-                    <option value="Equipamentos">Equipamentos / Instrumentos (Gera Patrimônio)</option>
-
-                    <option value="Outros">Outras Despesas</option>
-                </select>
+            <div id="aba_dizimo" class="secao-form">
+                <div class="form-group mb-3">
+                    <label for="dizimo_membro" class="form-label">Membro / Dizimista</label>
+                    <input type="text" name="dizimo_membro" id="dizimo_membro" class="form-control" placeholder="Nome do membro">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="dizimo_valor" class="form-label">Valor do Dízimo (R$)</label>
+                    <input type="number" step="0.01" name="dizimo_valor" id="dizimo_valor" class="form-control" placeholder="0.00">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="dizimo_ministerio" class="form-label">Ministério Vinculado</label>
+                    <input type="text" name="dizimo_ministerio" id="dizimo_ministerio" class="form-control" placeholder="Ex: Sede, Congregação Norte">
+                </div>
             </div>
-            <div class="form-group mb-3">
-                <label for="despesa_valor">Valor Pago (R$)</label>
-                <input type="number" step="0.01" name="despesa_valor" id="despesa_valor" class="form-control" placeholder="0.00">
-            </div>
-            <div class="form-group mb-3">
-                <label for="despesa_descricao">Descrição / Observação</label>
-                <input type="text" name="despesa_descricao" id="despesa_descricao" class="form-control" placeholder="Ex: Compra de materiais de limpeza">
-            </div>
-        </div>
 
-        <button type="submit" class="btn btn-success mt-3 w-100">Salvar Lançamento</button>
-    </form>
+            <div id="aba_oferta" class="secao-form" style="display: none;">
+                <div class="form-group mb-3">
+                    <label for="oferta_valor" class="form-label">Valor da Oferta Anônima (R$)</label>
+                    <input type="number" step="0.01" name="oferta_valor" id="oferta_valor" class="form-control" placeholder="0.00">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="oferta_culto" class="form-label">Culto Correspondente</label>
+                    <select name="oferta_culto" id="oferta_culto" class="form-select">
+                        <option value="Domingo">Culto de Domingo</option>
+                        <option value="Ensino">Culto de Ensino / Terça</option>
+                        <option value="Jovens">Culto de Jovens</option>
+                        <option value="Mulheres">Culto de Mulheres</option>
+                        <option value="Homens">Culto de Homens</option>
+                        <option value="Infantil">Culto Infantil / EBD</option>
+                        <option value="EBD">EBD - Escola Bíblica</option>
+                        <option value="Vigilia">Vigília / Oração</option>
+                        <option value="Congresso">Conferência / Congresso</option>
+                        <option value="Evento">Bazar / Evento Especial</option>
+                        <option value="Outros">Outros Eventos</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="aba_despesa" class="secao-form" style="display: none;">
+                <div class="form-group mb-3">
+                    <label for="despesa_categoria" class="form-label">Categoria da Conta (Plano de Contas)</label>
+                    <select name="despesa_categoria" id="despesa_categoria" class="form-select">
+                        <option value="Conta de Luz">Conta de Luz (Enel/Light)</option>
+                        <option value="Conta de Água">Conta de Água (Cedae/Saneamento)</option>
+                        <option value="Internet">Internet / Telefone</option>
+                        <option value="Aluguel">Aluguel do Templo</option>
+                        <option value="Louvor">Ministério de Louvor</option>
+                        <option value="Limpeza">Material de Limpeza e Conservação</option>
+                        <option value="Ação Social">Ação Social / Cestas Básicas</option>
+                        <option value="Equipamentos">Equipamentos / Instrumentos (Gera Patrimônio)</option>
+                        <option value="Outros">Outras Despesas</option>
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="despesa_valor" class="form-label">Valor Pago (R$)</label>
+                    <input type="number" step="0.01" name="despesa_valor" id="despesa_valor" class="form-control" placeholder="0.00">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="despesa_descricao" class="form-label">Descrição / Observação</label>
+                    <input type="text" name="despesa_descricao" id="despesa_descricao" class="form-control" placeholder="Ex: Compra de materiais de limpeza">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success mt-3 w-100 btn-lg">Salvar Lançamento</button>
+        </form>
+    </div>
 </div>
 
 <script>
@@ -108,4 +115,5 @@ function alternarAbas() {
     document.getElementById("aba_despesa").style.display = (tipo === "despesa") ? "block" : "none";
 }
 </script>
-{% endblock %}
+</body>
+</html>
