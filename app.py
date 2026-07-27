@@ -6,18 +6,28 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'chave_secreta_getsemani_123')
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+# Corrige o prefixo do banco do Render se necessario (postgres:// -> postgresql://)
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 def get_db_connection():
     if not DATABASE_URL:
         return None
-    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    try:
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        return conn
+    except Exception as e:
+        print(f"Erro ao conectar ao banco de dados: {e}")
+        return None
 
 def inicializar_banco():
+    conn = get_db_connection()
+    if not conn:
+        print("Aviso: Nao foi possivel conectar ao banco na inicializacao.")
+        return
+    
     try:
-        conn = get_db_connection()
-        if not conn:
-            return
         cursor = conn.cursor()
         
         # Tabela de Usuarios
@@ -44,7 +54,7 @@ def inicializar_banco():
         ''')
 
         # Usuario admin padrao
-        cursor.execute("SELECT * FROM usuarios WHERE login = 'brayan'")
+        cursor.execute("SELECT id FROM usuarios WHERE login = 'brayan'")
         if not cursor.fetchone():
             cursor.execute('''
                 INSERT INTO usuarios (nome, login, senha, cargo)
@@ -55,9 +65,13 @@ def inicializar_banco():
         cursor.close()
         conn.close()
     except Exception as e:
-        print(f"Erro no banco: {e}")
+        print(f"Erro na criacao das tabelas: {e}")
 
-inicializar_banco()
+# Executa sem derrubar o servidor caso haja falha
+try:
+    inicializar_banco()
+except Exception as e:
+    print(f"Falha segura ao inicializar banco: {e}")
 
 @app.route('/')
 def home():
@@ -71,9 +85,9 @@ def login():
         login_input = request.form.get('login')
         senha_input = request.form.get('senha')
 
-        try:
-            conn = get_db_connection()
-            if conn:
+        conn = get_db_connection()
+        if conn:
+            try:
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM usuarios WHERE login = %s AND senha = %s", (login_input, senha_input))
                 usuario = cursor.fetchone()
@@ -85,8 +99,8 @@ def login():
                     session['nome'] = usuario['nome']
                     session['cargo_usuario'] = usuario['cargo']
                     return redirect(url_for('dashboard'))
-        except Exception as e:
-            print(f"Erro no login: {e}")
+            except Exception as e:
+                print(f"Erro no login: {e}")
 
         flash('Login ou senha incorretos!', 'danger')
 
@@ -105,9 +119,9 @@ def dashboard():
     entradas = 0.0
     saidas = 0.0
 
-    try:
-        conn = get_db_connection()
-        if conn:
+    conn = get_db_connection()
+    if conn:
+        try:
             cursor = conn.cursor()
 
             cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE tipo IN ('dizimo', 'oferta')")
@@ -122,8 +136,8 @@ def dashboard():
 
             cursor.close()
             conn.close()
-    except Exception as e:
-        print(f"Erro no dashboard: {e}")
+        except Exception as e:
+            print(f"Erro na consulta do dashboard: {e}")
 
     meta_orcamento = 5000.00
     cargo_usuario = session.get('cargo_usuario', 'ADMINISTRADOR')
@@ -160,9 +174,9 @@ def transacoes():
             valor = float(request.form.get('despesa_valor') or 0)
 
         if valor > 0:
-            try:
-                conn = get_db_connection()
-                if conn:
+            conn = get_db_connection()
+            if conn:
+                try:
                     cursor = conn.cursor()
                     cursor.execute(
                         "INSERT INTO transacoes (tipo, categoria, descricao, valor) VALUES (%s, %s, %s, %s)",
@@ -172,8 +186,10 @@ def transacoes():
                     cursor.close()
                     conn.close()
                     flash('Lançamento registrado com sucesso!', 'success')
-            except Exception as e:
-                flash(f'Erro ao salvar: {e}', 'danger')
+                except Exception as e:
+                    flash(f'Erro ao salvar no banco: {e}', 'danger')
+            else:
+                flash('Sem conexão com o banco de dados.', 'danger')
         else:
             flash('Informe um valor maior que zero.', 'warning')
 
