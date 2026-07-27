@@ -25,7 +25,6 @@ def inicializar_banco():
         return
     try:
         cursor = conn.cursor()
-        # Tabela Usuarios
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -35,7 +34,6 @@ def inicializar_banco():
                 cargo VARCHAR(50) NOT NULL
             );
         ''')
-        # Tabela Transacoes
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS transacoes (
                 id SERIAL PRIMARY KEY,
@@ -46,7 +44,6 @@ def inicializar_banco():
                 data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
-        # Tabela Patrimonio / Materiais
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS patrimonio (
                 id SERIAL PRIMARY KEY,
@@ -57,7 +54,6 @@ def inicializar_banco():
                 data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
-        # Garante Admin Master
         cursor.execute("SELECT id FROM usuarios WHERE login = 'brayan'")
         if not cursor.fetchone():
             cursor.execute('''
@@ -74,8 +70,6 @@ try:
     inicializar_banco()
 except Exception as e:
     print(f"Falha init: {e}")
-
-# --- ROTAS ---
 
 @app.route('/')
 def home():
@@ -129,11 +123,13 @@ def dashboard():
     if conn:
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE tipo IN ('dizimo', 'oferta', 'entrada')")
+            # Soma todas as entradas considerando variações comuns de tipo
+            cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE LOWER(tipo) IN ('dizimo', 'oferta', 'entrada', 'dízimo')")
             res_e = cursor.fetchone()
             if res_e: entradas = float(res_e['total'])
 
-            cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE tipo IN ('despesa', 'saida')")
+            # Soma todas as saídas
+            cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE LOWER(tipo) IN ('despesa', 'saida', 'saída')")
             res_s = cursor.fetchone()
             if res_s: saidas = float(res_s['total'])
 
@@ -150,17 +146,15 @@ def transacoes():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        tipo = request.form.get('tipo_transacao')
-        categoria, descricao, valor = '', '', 0.0
-
-        if tipo in ['dizimo', 'entrada']:
-            categoria = request.form.get('categoria', 'Dízimo/Entrada')
-            descricao = request.form.get('descricao', '')
-            valor = float(request.form.get('valor') or 0)
-        elif tipo in ['oferta', 'despesa', 'saida']:
-            categoria = request.form.get('categoria', 'Oferta/Saída')
-            descricao = request.form.get('descricao', '')
-            valor = float(request.form.get('valor') or 0)
+        tipo = request.form.get('tipo_transacao') or request.form.get('tipo', 'entrada')
+        categoria = request.form.get('categoria', 'Geral')
+        descricao = request.form.get('descricao', '')
+        valor_str = request.form.get('valor', '0').replace(',', '.')
+        
+        try:
+            valor = float(valor_str)
+        except ValueError:
+            valor = 0.0
 
         if valor > 0:
             conn = get_db_connection()
@@ -173,7 +167,10 @@ def transacoes():
                     conn.close()
                     flash('Lançamento registrado com sucesso!', 'success')
                 except Exception as e:
-                    flash(f'Erro ao salvar: {e}', 'danger')
+                    flash(f'Erro ao salvar no banco: {e}', 'danger')
+        else:
+            flash('Informe um valor válido maior que zero.', 'warning')
+            
         return redirect(url_for('transacoes'))
 
     return render_template('transacoes.html')
@@ -197,6 +194,12 @@ def historico():
 
     return render_template('historico.html', transacoes=lista_transacoes)
 
+@app.route('/dizimistas')
+def dizimistas():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('dizimistas.html')
+
 @app.route('/usuarios', methods=['GET', 'POST'])
 def usuarios():
     if 'usuario_id' not in session:
@@ -216,7 +219,7 @@ def usuarios():
                 conn.commit()
                 cursor.close()
                 conn.close()
-                flash('Usuário cadastrado!', 'success')
+                flash('Usuário cadastrado com sucesso!', 'success')
             except Exception as e:
                 flash(f'Erro ao criar usuário: {e}', 'danger')
         return redirect(url_for('usuarios'))
@@ -235,44 +238,6 @@ def usuarios():
 
     return render_template('configuracoes.html', usuarios=lista_usuarios)
 
-@app.route('/patrimonio', methods=['GET', 'POST'])
-def patrimonio():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        item = request.form.get('nome_item')
-        qtd = int(request.form.get('quantidade') or 1)
-        depto = request.form.get('departamento', 'Geral')
-        obs = request.form.get('observacao', '')
-
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute("INSERT INTO patrimonio (nome_item, quantidade, departamento, observacao) VALUES (%s, %s, %s, %s)", (item, qtd, depto, obs))
-                conn.commit()
-                cursor.close()
-                conn.close()
-                flash('Material cadastrado!', 'success')
-            except Exception as e:
-                flash(f'Erro ao salvar patrimonio: {e}', 'danger')
-        return redirect(url_for('patrimonio'))
-
-    itens = []
-    conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM patrimonio ORDER BY id DESC")
-            itens = cursor.fetchall()
-            cursor.close()
-            conn.close()
-        except Exception as e:
-            print(f"Erro patrimonio: {e}")
-
-    return render_template('patrimonio_pergunta.html', itens=itens)
-
 @app.route('/ministerios', methods=['GET'])
 def ministerios():
     if 'usuario_id' not in session:
@@ -284,7 +249,7 @@ def ministerios():
     if conn:
         try:
             cursor = conn.cursor()
-            query = "SELECT descricao AS nome, COUNT(id) AS qtd, COALESCE(SUM(valor), 0) AS total FROM transacoes WHERE tipo IN ('dizimo', 'oferta', 'entrada')"
+            query = "SELECT descricao AS nome, COUNT(id) AS qtd, COALESCE(SUM(valor), 0) AS total FROM transacoes WHERE LOWER(tipo) IN ('dizimo', 'oferta', 'entrada', 'dízimo')"
             params = []
             if busca:
                 query += " AND descricao ILIKE %s"
@@ -301,8 +266,3 @@ def ministerios():
 
 if __name__ == '__main__':
     app.run(debug=True)
-    @app.route('/dizimistas')
-def dizimistas():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('dizimistas.html')
