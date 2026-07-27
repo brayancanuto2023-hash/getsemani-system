@@ -6,7 +6,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'chave_secreta_getsemani_123')
 
-# Ajusta URL da base de dados PostgreSQL para o formato padrão do SQLAlchemy/Psycopg2
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
@@ -18,19 +17,15 @@ def get_db_connection():
         conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         return conn
     except Exception as e:
-        print(f"Erro ao conectar ao banco de dados: {e}")
+        print(f"Erro de conexao: {e}")
         return None
 
 def inicializar_banco():
     conn = get_db_connection()
     if not conn:
-        print("Aviso: Nao foi possivel conectar ao banco na inicializacao.")
         return
-    
     try:
         cursor = conn.cursor()
-        
-        # Criacao de Tabelas
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -40,7 +35,6 @@ def inicializar_banco():
                 cargo VARCHAR(50) NOT NULL
             );
         ''')
-
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS transacoes (
                 id SERIAL PRIMARY KEY,
@@ -51,26 +45,22 @@ def inicializar_banco():
                 data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
-
-        # Cria usuario padrao se nao existir
         cursor.execute("SELECT id FROM usuarios WHERE login = 'brayan'")
         if not cursor.fetchone():
             cursor.execute('''
                 INSERT INTO usuarios (nome, login, senha, cargo)
                 VALUES ('Brayan', 'brayan', '1234', 'ADMINISTRADOR')
             ''')
-
         conn.commit()
         cursor.close()
         conn.close()
     except Exception as e:
-        print(f"Erro na criacao das tabelas: {e}")
+        print(f"Erro ao inicializar tabelas: {e}")
 
-# Executa a inicializacao sem travar a subida do servidor
 try:
     inicializar_banco()
 except Exception as e:
-    print(f"Falha na inicializacao do banco: {e}")
+    print(f"Falha na inicializacao: {e}")
 
 @app.route('/')
 def home():
@@ -83,7 +73,6 @@ def login():
     if request.method == 'POST':
         login_input = request.form.get('login')
         senha_input = request.form.get('senha')
-
         conn = get_db_connection()
         if conn:
             try:
@@ -92,7 +81,6 @@ def login():
                 usuario = cursor.fetchone()
                 cursor.close()
                 conn.close()
-
                 if usuario:
                     session['usuario_id'] = usuario['id']
                     session['nome'] = usuario['nome']
@@ -100,9 +88,7 @@ def login():
                     return redirect(url_for('dashboard'))
             except Exception as e:
                 print(f"Erro no login: {e}")
-
         flash('Login ou senha incorretos!', 'danger')
-
     return render_template('login.html')
 
 @app.route('/logout')
@@ -114,58 +100,40 @@ def logout():
 def dashboard():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-
-    entradas = 0.0
-    saidas = 0.0
-
+    entradas, saidas = 0.0, 0.0
     conn = get_db_connection()
     if conn:
         try:
             cursor = conn.cursor()
             cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE tipo IN ('dizimo', 'oferta')")
             res_e = cursor.fetchone()
-            if res_e:
-                entradas = float(res_e['total'])
+            if res_e: entradas = float(res_e['total'])
 
             cursor.execute("SELECT COALESCE(SUM(valor), 0) as total FROM transacoes WHERE tipo = 'despesa'")
             res_s = cursor.fetchone()
-            if res_s:
-                saidas = float(res_s['total'])
+            if res_s: saidas = float(res_s['total'])
 
             cursor.close()
             conn.close()
         except Exception as e:
             print(f"Erro no dashboard: {e}")
-
-    meta_orcamento = 5000.00
-    cargo_usuario = session.get('cargo_usuario', 'ADMINISTRADOR')
-
-    return render_template('index.html', entradas=entradas, saidas=saidas, meta_orcamento=meta_orcamento, cargo_usuario=cargo_usuario)
+    return render_template('index.html', entradas=entradas, saidas=saidas, meta_orcamento=5000.00, cargo_usuario=session.get('cargo_usuario', 'ADMINISTRADOR'))
 
 @app.route('/transacoes', methods=['GET', 'POST'])
 def transacoes():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-
     if request.method == 'POST':
         tipo = request.form.get('tipo_transacao')
-        categoria = ''
-        descricao = ''
-        valor = 0.0
-
+        categoria, descricao, valor = '', '', 0.0
         if tipo == 'dizimo':
-            membro = request.form.get('dizimo_membro', '')
-            ministerio = request.form.get('dizimo_ministerio', '')
-            categoria = f"Dízimo - {membro}"
-            descricao = f"Ministério: {ministerio}"
+            categoria = f"Dízimo - {request.form.get('dizimo_membro', '')}"
+            descricao = f"Ministério: {request.form.get('dizimo_ministerio', '')}"
             valor = float(request.form.get('dizimo_valor') or 0)
-
         elif tipo == 'oferta':
-            culto = request.form.get('oferta_culto', '')
-            categoria = f"Oferta - {culto}"
-            descricao = f"Culto: {culto}"
+            categoria = f"Oferta - {request.form.get('oferta_culto', '')}"
+            descricao = f"Culto: {request.form.get('oferta_culto', '')}"
             valor = float(request.form.get('oferta_valor') or 0)
-
         elif tipo == 'despesa':
             categoria = request.form.get('despesa_categoria', '')
             descricao = request.form.get('despesa_descricao', '')
@@ -176,111 +144,15 @@ def transacoes():
             if conn:
                 try:
                     cursor = conn.cursor()
-                    cursor.execute(
-                        "INSERT INTO transacoes (tipo, categoria, descricao, valor) VALUES (%s, %s, %s, %s)",
-                        (tipo, categoria, descricao, valor)
-                    )
+                    cursor.execute("INSERT INTO transacoes (tipo, categoria, descricao, valor) VALUES (%s, %s, %s, %s)", (tipo, categoria, descricao, valor))
                     conn.commit()
                     cursor.close()
                     conn.close()
                     flash('Lançamento registrado com sucesso!', 'success')
                 except Exception as e:
                     flash(f'Erro ao salvar: {e}', 'danger')
-            else:
-                flash('Sem conexão com a base de dados.', 'danger')
-        else:
-            flash('Informe um valor maior que zero.', 'warning')
-
         return redirect(url_for('transacoes'))
-
     return render_template('transacoes.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
-    @app.route('/ministerios', methods=['GET'])
-def ministerios():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-
-    busca = request.args.get('busca', '').strip()
-    
-    conn = get_db_connection()
-    ministerios_lista = []
-    
-    if conn:
-        try:
-            cursor = conn.cursor()
-            query = """
-                SELECT 
-                    descricao AS nome,
-                    COUNT(id) AS qtd,
-                    COALESCE(SUM(valor), 0) AS total
-                FROM transacoes
-                WHERE tipo IN ('dizimo', 'oferta')
-            """
-            params = []
-            
-            if busca:
-                query += " AND descricao ILIKE %s"
-                params.append(f"%{busca}%")
-                
-            query += " GROUP BY descricao ORDER BY total DESC;"
-            
-            cursor.execute(query, params)
-            ministerios_lista = cursor.fetchall()
-            cursor.close()
-            conn.close()
-        except Exception as e:
-            print(f"Erro ao buscar ministérios: {e}")
-
-    return render_template('ministerios.html', ministerios=ministerios_lista, busca=busca)
-
-
-@app.route('/ministerios/editar', methods=['POST'])
-def editar_ministerio():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-
-    nome_antigo = request.form.get('nome_antigo')
-    nome_novo = request.form.get('nome_novo')
-
-    if nome_antigo and nome_novo:
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "UPDATE transacoes SET descricao = %s WHERE descricao = %s",
-                    (nome_novo, nome_antigo)
-                )
-                conn.commit()
-                cursor.close()
-                conn.close()
-                flash('Ministério/Congregação atualizado com sucesso!', 'success')
-            except Exception as e:
-                flash(f'Erro ao atualizar: {e}', 'danger')
-
-    return redirect(url_for('ministerios'))
-
-
-@app.route('/ministerios/excluir', methods=['POST'])
-def excluir_ministerio():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-
-    nome_ministerio = request.form.get('nome_ministerio')
-
-    if nome_ministerio:
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute("DELETE FROM transacoes WHERE descricao = %s", (nome_ministerio,))
-                conn.commit()
-                cursor.close()
-                conn.close()
-                flash('Lançamentos do ministério excluídos com sucesso!', 'warning')
-            except Exception as e:
-                flash(f'Erro ao excluir: {e}', 'danger')
-
-    return redirect(url_for('ministerios'))
