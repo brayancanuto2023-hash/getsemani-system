@@ -264,3 +264,36 @@ def resetar_senha_admin():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    @app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        login_input = request.form.get('login', '').strip().lower()
+        senha_input = request.form.get('senha', '').strip()
+        
+        # 1. ACESSO DE EMERGÊNCIA (MASTER)
+        if login_input == 'brayan' and senha_input == '1234':
+            session['usuario_id'] = 1
+            session['nome'] = 'Brayan'
+            session['cargo_usuario'] = 'ADMINISTRADOR'
+            return redirect(url_for('dashboard'))
+
+        # 2. CONSULTA NO BANCO DE DADOS
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM usuarios WHERE LOWER(login) = %s AND senha = %s", (login_input, senha_input))
+                usuario = cursor.fetchone()
+                cursor.close()
+                conn.close()
+                
+                if usuario:
+                    session['usuario_id'] = usuario['id']
+                    session['nome'] = usuario['nome']
+                    session['cargo_usuario'] = usuario['cargo']
+                    return redirect(url_for('dashboard'))
+            except Exception as e:
+                print(f"Erro no login: {e}")
+        
+        flash('Login ou senha incorretos!', 'danger')
+    return render_template('login.html')
