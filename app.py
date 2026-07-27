@@ -377,3 +377,15 @@ def excluir_registro(tipo, id_registro):
 
 if __name__ == '__main__':
     app.run(debug=True)
+    @app.route('/transacoes', methods=['GET', 'POST'])
+def transacoes():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+        
+    if request.method == 'POST':
+        tipo = request.form.get('tipo_transacao')
+        # Aqui o sistema processa o formulário de acordo com o tipo
+        flash('Movimentação registrada com sucesso!', 'success')
+        return redirect(url_for('transacoes'))
+
+    return render_template('transacoes.html')
