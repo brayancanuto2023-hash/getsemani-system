@@ -197,3 +197,90 @@ def transacoes():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    @app.route('/ministerios', methods=['GET'])
+def ministerios():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+
+    busca = request.args.get('busca', '').strip()
+    
+    conn = get_db_connection()
+    ministerios_lista = []
+    
+    if conn:
+        try:
+            cursor = conn.cursor()
+            query = """
+                SELECT 
+                    descricao AS nome,
+                    COUNT(id) AS qtd,
+                    COALESCE(SUM(valor), 0) AS total
+                FROM transacoes
+                WHERE tipo IN ('dizimo', 'oferta')
+            """
+            params = []
+            
+            if busca:
+                query += " AND descricao ILIKE %s"
+                params.append(f"%{busca}%")
+                
+            query += " GROUP BY descricao ORDER BY total DESC;"
+            
+            cursor.execute(query, params)
+            ministerios_lista = cursor.fetchall()
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            print(f"Erro ao buscar ministérios: {e}")
+
+    return render_template('ministerios.html', ministerios=ministerios_lista, busca=busca)
+
+
+@app.route('/ministerios/editar', methods=['POST'])
+def editar_ministerio():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+
+    nome_antigo = request.form.get('nome_antigo')
+    nome_novo = request.form.get('nome_novo')
+
+    if nome_antigo and nome_novo:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE transacoes SET descricao = %s WHERE descricao = %s",
+                    (nome_novo, nome_antigo)
+                )
+                conn.commit()
+                cursor.close()
+                conn.close()
+                flash('Ministério/Congregação atualizado com sucesso!', 'success')
+            except Exception as e:
+                flash(f'Erro ao atualizar: {e}', 'danger')
+
+    return redirect(url_for('ministerios'))
+
+
+@app.route('/ministerios/excluir', methods=['POST'])
+def excluir_ministerio():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+
+    nome_ministerio = request.form.get('nome_ministerio')
+
+    if nome_ministerio:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM transacoes WHERE descricao = %s", (nome_ministerio,))
+                conn.commit()
+                cursor.close()
+                conn.close()
+                flash('Lançamentos do ministério excluídos com sucesso!', 'warning')
+            except Exception as e:
+                flash(f'Erro ao excluir: {e}', 'danger')
+
+    return redirect(url_for('ministerios'))
