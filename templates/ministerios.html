@@ -2,58 +2,151 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Getsêmani - Ministérios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ministérios e Congregações - Gestão Getsêmani</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; display: flex; }
-        .sidebar { width: 250px; height: 100vh; background-color: #1a1e29; color: #fff; padding-top: 20px; position: fixed; }
-        .sidebar h2 { text-align: center; margin-bottom: 5px; }
-        .sidebar a { display: block; color: #a0a5b5; padding: 15px 25px; text-decoration: none; }
-        .sidebar a:hover { background-color: #242936; color: #fff; }
-        .main-content { margin-left: 250px; padding: 40px; width: calc(100% - 250px); box-sizing: border-box; }
-        .box-lista { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        table th { background-color: #1a1e29; color: white; }
+        body { background-color: #f8f9fa; padding-top: 30px; }
+        .card-custom { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .table-dark-custom th { background-color: #343a40; color: white; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h2>GETSÊMANI</h2>
-        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="width: 85px; height: 85px; display: block; margin: 15px auto; border-radius: 50%;">
-        <a href="/dashboard">Dashboard</a>
-        <a href="/dizimistas">Dizimistas Fiéis</a>
-        <a href="/ministerios">Ministérios</a>
-        <a href="/transacoes">Lançar Transações</a>
-        <a href="/configuracoes">Configurações</a>
-    </div>
+<div class="container" style="max-width: 950px;">
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold">Divisão por Ministérios / Congregações</h3>
+            <a href="/dashboard" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Voltar</a>
+        </div>
+        <p class="text-muted">Balanço acumulado de entradas financeiras por cada departamento/congregação:</p>
 
-    <div class="main-content">
-        <h2>Divisão por Ministérios / Congregações</h2>
-        
-        <div class="box-lista">
-            <p style="color: #666;">Balanço acumulado de entradas financeiras por cada departamento/congregação:</p>
-            
-            <table>
-                <thead>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="GET" action="/ministerios" class="row g-2 mb-4">
+            <div class="col-md-9">
+                <input type="text" name="busca" class="form-control" placeholder="Filtrar por nome do Ministério ou Congregação..." value="{{ busca or '' }}">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filtrar</button>
+                {% if busca %}
+                    <a href="/ministerios" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i></a>
+                {% endif %}
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+                <thead class="table-dark-custom">
                     <tr>
                         <th>Nome do Ministério / Localidade</th>
-                        <th>Qtd. de Contribuições</th>
+                        <th class="text-center">Qtd. de Contribuições</th>
                         <th>Total Arrecadado Acumulado</th>
+                        <th class="text-end">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for min in ministerios %}
-                    <tr>
-                        <td><strong>{{ min[0] }}</strong></td>
-                        <td>{{ min[2] }} lançamentos</td>
-                        <td style="color: #3b82f6; font-weight: bold;">R$ {{ "%.2f"|format(min[1]) }}</td>
-                    </tr>
-                    {% endfor %}
+                    {% if ministerios %}
+                        {% for item in ministerios %}
+                        <tr>
+                            <td class="fw-bold">{{ item.nome }}</td>
+                            <td class="text-center">{{ item.qtd }} lançamentos</td>
+                            <td class="text-primary fw-bold">R$ {{ "%.2f"|format(item.total) }}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-warning me-1" 
+                                        onclick="abrirModalEditar('{{ item.nome }}')" 
+                                        title="Editar Nome">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="abrirModalExcluir('{{ item.nome }}')" 
+                                        title="Apagar">
+                                    <i class="bi bi-trash"></i> Apagar
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">Nenhum registro ou ministério encontrado.</td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
+</div>
 
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/ministerios/editar">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Ministério / Congregação</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="nome_antigo" id="edit_nome_antigo">
+          <div class="mb-3">
+            <label class="form-label">Nome Atual / Novo Nome</label>
+            <input type="text" name="nome_novo" id="edit_nome_novo" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalExcluir" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/ministerios/excluir">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger">Excluir Ministério / Congregação</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="nome_ministerio" id="delete_nome_ministerio">
+          <p>Tem certeza que deseja apagar os registros associados a <strong id="texto_excluir_nome"></strong>?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function abrirModalEditar(nome) {
+    document.getElementById('edit_nome_antigo').value = nome;
+    document.getElementById('edit_nome_novo').value = nome;
+    var modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+    modal.show();
+}
+
+function abrirModalExcluir(nome) {
+    document.getElementById('delete_nome_ministerio').value = nome;
+    document.getElementById('texto_excluir_nome').innerText = nome;
+    var modal = new bootstrap.Modal(document.getElementById('modalExcluir'));
+    modal.show();
+}
+</script>
 </body>
 </html>
