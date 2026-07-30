@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Getsêmani System</title>
+    <title>Login - Getsêmani</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { background-color: #1e293b; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card-login { border: none; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); background: #ffffff; width: 100%; max-width: 400px; padding: 30px; }
+        body { background-color: #0f172a; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: #1e293b; border: none; border-radius: 12px; padding: 30px; width: 100%; max-width: 400px; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .form-control { background-color: #0f172a; border: 1px solid #334155; color: #fff; }
+        .form-control:focus { background-color: #0f172a; border-color: #3b82f6; color: #fff; box-shadow: none; }
     </style>
 </head>
 <body>
 
-<div class="card card-login">
+<div class="login-card">
     <div class="text-center mb-4">
-        <h3 class="fw-bold text-dark">GETSÊMANI</h3>
+        <h3 class="fw-bold">GETSÊMANI</h3>
         <p class="text-muted small">Ecossistema de Gestão Eclesiástica</p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          <div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+          <div class="alert alert-danger py-2 small" role="alert">
             {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
         {% endfor %}
       {% endif %}
@@ -32,12 +32,12 @@
 
     <form action="/login" method="POST">
         <div class="mb-3">
-            <label for="usuario" class="form-label small fw-semibold">Utilizador</label>
+            <label for="usuario" class="form-label small">Utilizador</label>
             <input type="text" class="form-control" id="usuario" name="usuario" placeholder="Digite o seu utilizador" required>
         </div>
 
         <div class="mb-4">
-            <label for="senha" class="form-label small fw-semibold">Senha</label>
+            <label for="senha" class="form-label small">Senha</label>
             <input type="password" class="form-control" id="senha" name="senha" placeholder="Digite a sua senha" required>
         </div>
 
