@@ -3,114 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Getsêmani - Login</title>
+    <title>Login - Getsêmani System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #1a1e29;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .login-container {
-            background-color: #2c3240;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 380px;
-            text-align: center;
-            color: white;
-        }
-        .login-container h2 {
-            margin-bottom: 10px;
-            font-size: 24px;
-            letter-spacing: 1px;
-        }
-        .login-container p {
-            color: #a0a5b5;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-        .input-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        .input-group label {
-            display: block;
-            color: #a0a5b5;
-            font-size: 13px;
-            margin-bottom: 6px;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #444c5e;
-            border-radius: 6px;
-            background-color: #1a1e29;
-            color: white;
-            font-size: 15px;
-            box-sizing: border-box;
-        }
-        .input-group input:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-        .btn-entrar {
-            width: 100%;
-            padding: 12px;
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-top: 10px;
-        }
-        .btn-entrar:hover {
-            background-color: #2563eb;
-        }
-        .alert {
-            background-color: #ef4444;
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
+        body { background-color: #1e293b; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card-login { border: none; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); background: #ffffff; width: 100%; max-width: 400px; padding: 30px; }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
-        <h2>GETSÊMANI</h2>
-        <p>Ecossistema de Gestão Eclesiástica</p>
-        
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            {% for message in messages %}
-              <div class="alert">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <form action="/login" method="POST">
-            <div class="input-group">
-                <label>Utilizador</label>
-                <input type="text" name="login" required placeholder="Digite o seu utilizador">
-            </div>
-            <div class="input-group">
-                <label>Senha</label>
-                <input type="password" name="senha" required placeholder="Digite a sua senha">
-            </div>
-            <button type="submit" class="btn-entrar">Entrar no Sistema</button>
-        </form>
+<div class="card card-login">
+    <div class="text-center mb-4">
+        <h3 class="fw-bold text-dark">GETSÊMANI</h3>
+        <p class="text-muted small">Ecossistema de Gestão Eclesiástica</p>
     </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="/login" method="POST">
+        <div class="mb-3">
+            <label for="usuario" class="form-label small fw-semibold">Utilizador</label>
+            <input type="text" class="form-control" id="usuario" name="usuario" placeholder="Digite o seu utilizador" required>
+        </div>
+
+        <div class="mb-4">
+            <label for="senha" class="form-label small fw-semibold">Senha</label>
+            <input type="password" class="form-control" id="senha" name="senha" placeholder="Digite a sua senha" required>
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary py-2 fw-bold">Entrar no Sistema</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
