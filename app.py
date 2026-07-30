@@ -14,6 +14,31 @@ def conectar_banco():
 def inicializar_banco():
     conn = conectar_banco()
     cursor = conn.cursor()
+    # --- ROTA DE PATRIMÓNIO ---
+@app.route('/patrimonio')
+def patrimonio():
+    if 'usuario' not in session:
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    
+    # Cria a tabela de património caso não exista
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS patrimonio (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome_equipamento TEXT,
+            numero_serie TEXT,
+            valor TEXT,
+            data_registo TEXT
+        )
+    ''')
+    
+    cursor.execute("SELECT * FROM patrimonio")
+    bens = cursor.fetchall()
+    conn.close()
+    
+    return render_template('patrimonio.html', bens=bens)
     
     # 1. Tabela de Usuários
     cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
