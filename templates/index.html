@@ -587,3 +587,24 @@
 </body>
 
 </html>
+<!-- No cabeçalho da tabela -->
+<tr>
+    <th>Data</th>
+    <th>Descrição</th>
+    <th>Categoria</th>
+    <th>Tipo</th>
+    <th>Valor</th>
+    <th>Ações</th> <!-- Nova coluna -->
+</tr>
+
+<!-- Dentro do loop que gera as linhas da tabela (ex: for t in transacoes) -->
+<tr>
+    <td>{{ t[1] }}</td>
+    <td>{{ t[2] }}</td>
+    <td>{{ t[3] }}</td>
+    <td>{{ t[4] }}</td>
+    <td>R$ {{ t[5] }}</td>
+    <td>
+        <a href="/excluir/{{ t[0] }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta transação?');">🗑️ Apagar</a>
+    </td>
+</tr>
