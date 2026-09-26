@@ -251,4 +251,15 @@ def gerar_relatorio_pdf():
     return send_file(buffer, as_attachment=True, download_name=f"prestacao_contas_{mes_atual.replace('/', '-')}.pdf", mimetype='application/pdf')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)@app.route('/excluir/<int:id>')
+def excluir(id):
+    if 'usuario' not in session:
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('banco.db')
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM transacoes WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for('index'))
