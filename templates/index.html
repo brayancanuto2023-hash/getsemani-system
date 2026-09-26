@@ -1,319 +1,589 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
+
 <head>
+
     <meta charset="UTF-8">
+
     <title>Getsêmani System - Painel Geral</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
+
         body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
         .sidebar { background: #111827; min-height: 100vh; color: #fff; padding: 20px; }
+
         .sidebar a { color: #9ca3af; text-decoration: none; display: block; padding: 10px 15px; border-radius: 8px; margin-bottom: 5px; }
+
         .sidebar a:hover, .sidebar a.active { background: #1f2937; color: #fff; }
+
         .card-custom { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
         .watermark-footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 40px; padding: 20px; border-top: 1px solid #e5e7eb; }
+
     </style>
+
 </head>
+
 <body>
+
 <div class="container-fluid">
+
     <div class="row">
+
         <!-- Menu Lateral -->
+
         <div class="col-md-2 sidebar d-flex flex-column justify-content-between">
+
             <div>
+
                 <h4 class="fw-bold text-center text-primary mb-4">GETSÊMANI</h4>
+
                 <p class="small text-muted text-center">Logado como: <strong>{{ usuario }}</strong> ({{ cargo }})</p>
+
                 <hr class="border-secondary">
+
                 <a href="#" class="active">📊 Painel Principal</a>
+
                 <a href="#transacoes">💰 Movimentos do Mês</a>
+
                 <a href="#patrimonio">🏛️ Gestão de Património</a>
+
                 {% if cargo == 'Admin' %}
+
                 <a href="#config">⚙️ Configurações & Utilizadores</a>
+
                 {% endif %}
+
             </div>
+
             <div>
+
                 <a href="/logout" class="btn btn-outline-danger w-100 btn-sm">Sair do Sistema</a>
+
                 <div class="text-center mt-3 small text-muted" style="font-size: 10px;">brayan.sistemy</div>
+
             </div>
+
         </div>
+
+
 
         <!-- Conteúdo Principal -->
+
         <div class="col-md-10 p-4">
+
             <div class="d-flex justify-content-between align-items-center mb-4">
+
                 <h2>Painel Financeiro Ministerial (Competência: {{ mes_atual }})</h2>
+
                 <div>
+
                     <a href="/gerar_relatorio_pdf" class="btn btn-success btn-sm fw-bold">📄 Gerar Prestação de Contas (PDF)</a>
+
                 </div>
+
             </div>
+
+
 
             {% with messages = get_flashed_messages(with_categories=true) %}
+
               {% if messages %}
+
                 {% for category, message in messages %}
+
                   <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+
                     {{ message }}
+
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+
                   </div>
+
                 {% endfor %}
+
               {% endif %}
+
             {% endwith %}
 
+
+
             <!-- Cards de Métricas Principais -->
+
             <div class="row g-4 mb-4">
+
                 <div class="col-md-3">
+
                     <div class="card card-custom p-3 bg-white border-start border-primary border-4">
+
                         <h6 class="text-muted small">Entradas do Mês</h6>
+
                         <h4 class="fw-bold text-success">R$ {{ "%.2f"|format(total_entradas) }}</h4>
+
                     </div>
+
                 </div>
+
                 <div class="col-md-3">
+
                     <div class="card card-custom p-3 bg-white border-start border-danger border-4">
+
                         <h6 class="text-muted small">Saídas / Despesas do Mês</h6>
+
                         <h4 class="fw-bold text-danger">R$ {{ "%.2f"|format(total_saidas) }}</h4>
+
                     </div>
+
                 </div>
+
                 <div class="col-md-3">
+
                     <div class="card card-custom p-3 bg-white border-start border-warning border-4">
+
                         <h6 class="text-muted small">Balanço do Mês (Sobra)</h6>
+
                         <h4 class="fw-bold text-dark">R$ {{ "%.2f"|format(saldo_mes) }}</h4>
+
                     </div>
+
                 </div>
+
                 <div class="col-md-3">
+
                     <div class="card card-custom p-3 bg-white border-start border-success border-4">
+
                         <h6 class="text-muted small">Saldo Atual em Caixa (Acumulado)</h6>
+
                         <h4 class="fw-bold text-primary">R$ {{ "%.2f"|format(saldo_geral_caixa) }}</h4>
+
                     </div>
+
                 </div>
+
             </div>
+
+
 
             <!-- Gráficos e Lançamentos -->
+
             <div class="row g-4 mb-4">
-                <div class="col-md-6">
-                    <div class="card card-custom p-4 bg-white">
-                        <h5 class="fw-bold mb-3">Novo Lançamento Financeiro</h5>
-                        <form action="/adicionar_transacao" method="POST">
-                            <div class="mb-3">
-                                <label class="form-label small">Tipo</label>
-                                <select class="form-select" name="tipo" id="tipoTransacao" onchange="toggleMembro()" required>
-                                    <option value="Entrada">Entrada (Receita)</option>
-                                    <option value="Saida">Saída (Despesa)</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small">Categoria / Plano de Contas</label>
-                                <select class="form-select" name="categoria" id="categoriaSelect" required>
-                                    <option value="Dízimo">Dízimo (Identificado)</option>
-                                    <option value="Oferta">Oferta (Anónimo)</option>
-                                    <option value="Doação Especial">Doação Especial</option>
-                                </select>
-                            </div>
-                            <div class="mb-3" id="campoMembro">
-                                <label class="form-label small">Nome do Dizimista (Restrito a Pastores/Tesoureiras)</label>
-                                <input type="text" class="form-control" name="membro_nome" placeholder="Nome do membro">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small">Valor (R$)</label>
-                                <input type="number" step="0.01" class="form-control" name="valor" placeholder="0.00" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small">Descrição / Observação</label>
-                                <input type="text" class="form-control" name="descricao" placeholder="Ex: Conta de Luz / Evento de Jovens">
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100 fw-bold">Registar Lançamento</button>
-                        </form>
-                    </div>
-                </div>
 
                 <div class="col-md-6">
+
                     <div class="card card-custom p-4 bg-white">
-                        <h5 class="fw-bold mb-3">Gráfico de Desempenho Mensal</h5>
-                        <canvas id="graficoFinanceiro" height="200"></canvas>
+
+                        <h5 class="fw-bold mb-3">Novo Lançamento Financeiro</h5>
+
+                        <form action="/adicionar_transacao" method="POST">
+
+                            <div class="mb-3">
+
+                                <label class="form-label small">Tipo</label>
+
+                                <select class="form-select" name="tipo" id="tipoTransacao" onchange="toggleMembro()" required>
+
+                                    <option value="Entrada">Entrada (Receita)</option>
+
+                                    <option value="Saida">Saída (Despesa)</option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label class="form-label small">Categoria / Plano de Contas</label>
+
+                                <select class="form-select" name="categoria" id="categoriaSelect" required>
+
+                                    <option value="Dízimo">Dízimo (Identificado)</option>
+
+                                    <option value="Oferta">Oferta (Anónimo)</option>
+
+                                    <option value="Doação Especial">Doação Especial</option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="mb-3" id="campoMembro">
+
+                                <label class="form-label small">Nome do Dizimista (Restrito a Pastores/Tesoureiras)</label>
+
+                                <input type="text" class="form-control" name="membro_nome" placeholder="Nome do membro">
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label class="form-label small">Valor (R$)</label>
+
+                                <input type="number" step="0.01" class="form-control" name="valor" placeholder="0.00" required>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label class="form-label small">Descrição / Observação</label>
+
+                                <input type="text" class="form-control" name="descricao" placeholder="Ex: Conta de Luz / Evento de Jovens">
+
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 fw-bold">Registar Lançamento</button>
+
+                        </form>
+
                     </div>
+
                 </div>
+
+
+
+                <div class="col-md-6">
+
+                    <div class="card card-custom p-4 bg-white">
+
+                        <h5 class="fw-bold mb-3">Gráfico de Desempenho Mensal</h5>
+
+                        <canvas id="graficoFinanceiro" height="200"></canvas>
+
+                    </div>
+
+                </div>
+
             </div>
+
+
 
             <!-- Tabela de Movimentos -->
+
             <div class="card card-custom p-4 bg-white mb-4" id="transacoes">
+
                 <h5 class="fw-bold mb-3">Movimentos Financeiros do Mês Corrente</h5>
+
                 <div class="table-responsive">
+
                     <table class="table table-hover align-middle">
+
                         <thead class="table-light">
+
                             <tr>
+
                                 <th>Tipo</th>
+
                                 <th>Categoria</th>
+
                                 <th>Valor</th>
+
                                 <th>Contribuinte</th>
+
                                 <th>Descrição</th>
+
                                 <th>Data</th>
+
                             </tr>
+
                         </thead>
+
                         <tbody>
+
                             {% for t in transacoes %}
+
                             <tr>
+
                                 <td><span class="badge bg-{{ 'success' if t[1] == 'Entrada' else 'danger' }}">{{ t[1] }}</span></td>
+
                                 <td>{{ t[2] }}</td>
+
                                 <td class="fw-bold">R$ {{ "%.2f"|format(t[3]) }}</td>
+
                                 <td>
+
                                     {% if t[2] == 'Dízimo' and is_admin_ou_pastor %}
+
                                         {{ t[4] }} <span class="badge bg-secondary" style="font-size:9px;">Confidencial</span>
+
                                     {% else %}
+
                                         Anónimo
+
                                     {% endif %}
+
                                 </td>
+
                                 <td>{{ t[5] }}</td>
+
                                 <td>{{ t[6] }}</td>
+
                             </tr>
+
                             {% else %}
+
                             <tr>
+
                                 <td colspan="6" class="text-center text-muted">Nenhum registo financeiro neste mês ainda.</td>
+
                             </tr>
+
                             {% endfor %}
+
                         </tbody>
+
                     </table>
+
                 </div>
+
             </div>
+
+
 
             <!-- Gestão de Património -->
+
             <div class="card card-custom p-4 bg-white mb-4" id="patrimonio">
+
                 <h5 class="fw-bold mb-3">Gestão de Património Ministerial (Bens da Igreja)</h5>
+
                 {% if cargo == 'Admin' %}
+
                 <form action="/adicionar_patrimonio" method="POST" class="row g-3 mb-4">
+
                     <div class="col-md-3">
+
                         <input type="text" class="form-control" name="nome_equipamento" placeholder="Nome (ex: Caixa de Som)" required>
+
                     </div>
+
                     <div class="col-md-2">
+
                         <input type="text" class="form-control" name="numero_serie" placeholder="Nº de Série" required>
+
                     </div>
+
                     <div class="col-md-2">
+
                         <input type="number" step="0.01" class="form-control" name="valor" placeholder="Valor (R$)" required>
+
                     </div>
+
                     <div class="col-md-3">
+
                         <input type="text" class="form-control" name="localizacao" placeholder="Local (ex: Templo Principal)" required>
+
                     </div>
+
                     <div class="col-md-2">
+
                         <button type="submit" class="btn btn-dark w-100 fw-bold">Registar Bem</button>
+
                     </div>
+
                 </form>
+
                 {% endif %}
+
                 <div class="table-responsive">
+
                     <table class="table table-bordered align-middle">
+
                         <thead class="table-dark">
+
                             <tr>
+
                                 <th>Equipamento</th>
+
                                 <th>Número de Série</th>
+
                                 <th>Valor Estimado</th>
+
                                 <th>Localização Física</th>
+
                                 <th>Data de Registo</th>
+
                             </tr>
+
                         </thead>
+
                         <tbody>
+
                             {% for p in patrimonios %}
+
                             <tr>
+
                                 <td class="fw-bold">{{ p[1] }}</td>
+
                                 <td><code>{{ p[2] }}</code></td>
+
                                 <td>R$ {{ "%.2f"|format(p[3]) }}</td>
+
                                 <td>{{ p[4] }}</td>
+
                             </tr>
+
                             {% else %}
+
                             <tr>
+
                                 <td colspan="5" class="text-center text-muted">Nenhum património registado.</td>
+
                             </tr>
+
                             {% endfor %}
+
                         </tbody>
+
                     </table>
+
                 </div>
+
             </div>
+
+
 
             <!-- Painel de Administração e Contas (Exclusivo Admin) -->
+
             {% if cargo == 'Admin' %}
+
             <div class="card card-custom p-4 bg-white mb-4" id="config">
+
                 <h5 class="fw-bold mb-3">Configurações & Gestão de Acessos Ilimitados</h5>
+
                 <form action="/criar_usuario" method="POST" class="row g-3">
+
                     <div class="col-md-4">
+
                         <input type="text" class="form-control" name="novo_user" placeholder="Nome do Novo Utilizador" required>
+
                     </div>
+
                     <div class="col-md-3">
+
                         <input type="password" class="form-control" name="nova_senha" placeholder="Senha de Acesso" required>
+
                     </div>
+
                     <div class="col-md-3">
+
                         <select class="form-select" name="novo_cargo" required>
+
                             <option value="Pastor">Pastor</option>
+
                             <option value="Tesoureira">Tesoureira</option>
+
                             <option value="Membro">Membro</option>
+
                         </select>
+
                     </div>
+
                     <div class="col-md-2">
+
                         <button type="submit" class="btn btn-success w-100 fw-bold">Criar Conta</button>
+
                     </div>
+
                 </form>
+
             </div>
+
             {% endif %}
 
+
+
             <div class="watermark-footer">
+
                 Getsêmani System &bull; Desenvolvido por <strong>brayan.sistemy</strong> &bull; Administrador Geral: Brayan
+
             </div>
+
         </div>
+
     </div>
+
 </div>
 
+
+
 <script>
+
     function toggleMembro() {
+
         const tipo = document.getElementById('tipoTransacao').value;
+
         const campoMembro = document.getElementById('campoMembro');
+
         const selectCat = document.getElementById('categoriaSelect');
+
         
+
         if(tipo === 'Entrada') {
+
             selectCat.innerHTML = '<option value="Dízimo">Dízimo (Identificado)</option><option value="Oferta">Oferta (Anónimo)</option><option value="Doação Especial">Doação Especial</option>';
+
             campoMembro.style.display = 'block';
+
         } else {
+
             selectCat.innerHTML = '<option value="Água">Água</option><option value="Luz">Luz</option><option value="Internet">Internet</option><option value="Manutenção">Manutenção e Reparos</option><option value="Outras Despesas">Outras Despesas</option>';
+
             campoMembro.style.display = 'none';
+
         }
+
     }
 
+
+
     // Gráfico de Barras / Estatísticas
+
     const ctx = document.getElementById('graficoFinanceiro').getContext('2d');
+
     const graficoFinanceiro = new Chart(ctx, {
+
         type: 'bar',
+
         data: {
+
             labels: ['Entradas', 'Saídas', 'Balanço Mensal'],
+
             datasets: [{
+
                 label: 'Valores em R$',
+
                 data: [{{ total_entradas }}, {{ total_saidas }}, {{ saldo_mes }}],
+
                 backgroundColor: ['#10b981', '#ef4444', '#3b82f6'],
+
                 borderWidth: 1
+
             }]
+
         },
+
         options: {
+
             responsive: true,
+
             scales: {
+
                 y: { beginAtZero: true }
+
             }
+
         }
-    });});
-    
-        // COLE AQUI A SUA FUNÇÃO mostrarAba
-        function mostrarAba(nomeAba) {
-            const abas = document.querySelectorAll('.conteudo-aba');
-            abas.forEach(aba => {
-                aba.style.display = 'none';
-            });
-    
-            const links = document.querySelectorAll('.sidebar a');
-            links.forEach(link => {
-                link.classList.remove('active');
-            });
-    
-            document.getElementById('aba-' + nomeAba).style.display = 'block';
-    
-            const botaoAtivo = document.getElementById('btn-' + nomeAba);
-            if (botaoAtivo) {
-                botaoAtivo.classList.add('active');
-            }
-    
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    
-    </script> <!-- Linha 292 -->
+
+    });
+
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
+
 </html>
