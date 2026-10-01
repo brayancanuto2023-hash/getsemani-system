@@ -505,3 +505,16 @@ def gerar_relatorio_pdf():
 if __name__ == '__main__':
 
     app.run(host='0.0.0.0', port=5000, debug=True)
+    @app.route('/excluir/<int:id>', methods=['POST'])
+def excluir(id):
+    if 'usuario' not in session:
+        return redirect(url_for('login'))
+    
+    conn = conectar_banco()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM transacoes WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    
+    flash('Registo excluído com sucesso!', 'success')
+    return redirect(url_for('index'))
