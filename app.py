@@ -501,12 +501,8 @@ def gerar_relatorio_pdf():
     return send_file(buffer, as_attachment=True, download_name=f"prestacao_contas_{mes_atual.replace('/', '-')}.pdf", mimetype='application/pdf')
 
 
-
-if __name__ == '__main__':
-
-    app.run(host='0.0.0.0', port=5000, debug=True)
-    @app.route('/excluir/<int:id>', methods=['POST'])
-def excluir(id):
+ @app.route('/excluir/<int:id>', methods=['POST'])
+    def excluir(id):
     if 'usuario' not in session:
         return redirect(url_for('login'))
     
@@ -518,3 +514,7 @@ def excluir(id):
     
     flash('Registo excluído com sucesso!', 'success')
     return redirect(url_for('index'))
+if __name__ == '__main__':
+
+    app.run(host='0.0.0.0', port=5000, debug=True)
+   
