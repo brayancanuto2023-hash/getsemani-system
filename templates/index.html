@@ -423,12 +423,12 @@
                                 <td>R$ {{ "%.2f"|format(p[3]) }}</td>
 
                                 <td>{{ p[4] }}</td>
-                                <td>
+                                
+<td>
                 <form action="{{ url_for('excluir', id=p[0]) }}" method="POST" style="display:inline;">
                     <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</button>
                 </form>
             </td>
-
                             </tr>
 
                             {% else %}
