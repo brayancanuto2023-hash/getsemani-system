@@ -505,7 +505,7 @@ def gerar_relatorio_pdf():
 def excluir(id):
     if 'usuario' not in session:
         return redirect(url_for('login'))
-    
+        
     conn = conectar_banco()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM transacoes WHERE id = ?", (id,))
