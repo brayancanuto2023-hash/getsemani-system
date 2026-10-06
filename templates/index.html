@@ -423,6 +423,11 @@
                                 <td>R$ {{ "%.2f"|format(p[3]) }}</td>
 
                                 <td>{{ p[4] }}</td>
+                                <td>
+                <form action="{{ url_for('excluir', id=p[0]) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</button>
+                </form>
+            </td>
 
                             </tr>
 
@@ -498,7 +503,7 @@
 
             <div class="watermark-footer">
 
-                Getsêmani System &bull; Desenvolvido por <strong>brayan.sistemy</strong> &bull; Administrador Geral: Brayan
+                Getsêmani System &bull; Desenvolvido por <strong>brayan.system</strong> &bull; Administrador Geral: Brayan
 
             </div>
 
