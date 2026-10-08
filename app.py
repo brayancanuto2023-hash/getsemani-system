@@ -137,7 +137,7 @@ inicializar_banco()
 @app.route('/')
 
 def index():
-
+busca = request.args.get('busca', '')
     if 'usuario' not in session:
 
         return redirect(url_for('login'))
@@ -182,8 +182,16 @@ def index():
 
     # Listar Transações do Mês
 
-    cursor.execute("SELECT id, tipo, categoria, valor, membro, descricao, data_registo FROM transacoes WHERE mes_ano = %s ORDER BY id DESC", (mes_atual,))
-
+    if busca:
+        cursor.execute(
+            "SELECT id, tipo, categoria, valor, membro, descricao, data_registo FROM transacoes WHERE mes_ano = %s AND (descricao ILIKE %s OR categoria ILIKE %s OR membro ILIKE %s) ORDER BY id DESC",
+            (mes_atual, f"%{busca}%", f"%{busca}%", f"%{busca}%")
+        )
+    else:
+        cursor.execute(
+            "SELECT id, tipo, categoria, valor, membro, descricao, data_registo FROM transacoes WHERE mes_ano = %s ORDER BY id DESC",
+            (mes_atual,)
+        )
     transacoes = cursor.fetchall()
 
     
@@ -215,7 +223,7 @@ def index():
     return render_template('index.html', 
 
                            usuario=session.get('usuario'),
-
+                           busca=busca,
                            cargo=session.get('cargo'),
 
                            total_entradas=total_entradas,
