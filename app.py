@@ -41,7 +41,7 @@ def inicializar_banco():
 
         CREATE TABLE IF NOT EXISTS usuarios (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
 
             username TEXT UNIQUE,
 
@@ -61,7 +61,7 @@ def inicializar_banco():
 
         CREATE TABLE IF NOT EXISTS transacoes (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
 
             tipo TEXT, -- 'Entrada' ou 'Saida'
 
@@ -89,7 +89,7 @@ def inicializar_banco():
 
         CREATE TABLE IF NOT EXISTS patrimonio (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
 
             nome_equipamento TEXT,
 
@@ -488,7 +488,7 @@ def gerar_relatorio_pdf():
 
     
 
-    p.drawString(100, 540, "Sistema desenvolvido por brayan.sistemy - Todos os direitos reservados.")
+    p.drawString(100, 540, "Sistema desenvolvido por brayan.system - Todos os direitos reservados.")
 
     p.showPage()
 
