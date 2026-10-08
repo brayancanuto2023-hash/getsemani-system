@@ -23,11 +23,8 @@ app.secret_key = "brayan_secret_key_getsemani_master"
 
 
 def conectar_banco():
-
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-
-    return sqlite3.connect(os.path.join(base_dir, 'getsemani_master.db'))
-
+    url_conexao = os.environ.get('DATABASE_URL')
+    return psycopg2.connect(url_conexao)
 
 
 def inicializar_banco():
