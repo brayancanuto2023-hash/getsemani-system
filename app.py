@@ -156,13 +156,13 @@ def index():
 
     # Calcular Entradas e Saídas do Mês Atual
 
-    cursor.execute("SELECT SUM(valor) FROM transacoes WHERE tipo = 'Entrada' AND mes_ano = ?", (mes_atual,))
+    cursor.execute("SELECT SUM(valor) FROM transacoes WHERE tipo = 'Entrada' AND mes_ano = %s", (mes_atual,))
 
     total_entradas = cursor.fetchone()[0] or 0.0
 
     
 
-    cursor.execute("SELECT SUM(valor) FROM transacoes WHERE tipo = 'Saida' AND mes_ano = ?", (mes_atual,))
+    cursor.execute("SELECT SUM(valor) FROM transacoes WHERE tipo = 'Saida' AND mes_ano = %s", (mes_atual,))
 
     total_saidas = cursor.fetchone()[0] or 0.0
 
@@ -182,7 +182,7 @@ def index():
 
     # Listar Transações do Mês
 
-    cursor.execute("SELECT id, tipo, categoria, valor, membro, descricao, data_registo FROM transacoes WHERE mes_ano = ? ORDER BY id DESC", (mes_atual,))
+    cursor.execute("SELECT id, tipo, categoria, valor, membro, descricao, data_registo FROM transacoes WHERE mes_ano = %s ORDER BY id DESC", (mes_atual,))
 
     transacoes = cursor.fetchall()
 
@@ -254,7 +254,7 @@ def login():
 
         cursor = conn.cursor()
 
-        cursor.execute("SELECT cargo FROM usuarios WHERE username = ? AND senha = ?", (username, senha))
+        cursor.execute("SELECT cargo FROM usuarios WHERE username = %s AND senha = %s", (username, senha))
 
         user = cursor.fetchone()
 
@@ -331,7 +331,7 @@ def adicionar_transacao():
 
     cursor = conn.cursor()
 
-    cursor.execute("INSERT INTO transacoes (tipo, categoria, valor, membro, descricao, mes_ano, data_registo) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    cursor.execute("INSERT INTO transacoes (tipo, categoria, valor, membro, descricao, mes_ano, data_registo) VALUES (%s, %s, %s, %s, %s, %s, %s)",
 
                    (tipo, categoria, valor, membro, descricao, mes_ano, data_registo))
 
@@ -373,7 +373,7 @@ def adicionar_patrimonio():
 
     cursor = conn.cursor()
 
-    cursor.execute("INSERT INTO patrimonio (nome_equipamento, numero_serie, valor, localizacao, data_registo) VALUES (?, ?, ?, ?, ?)",
+    cursor.execute("INSERT INTO patrimonio (nome_equipamento, numero_serie, valor, localizacao, data_registo) VALUES (%s, %s, %s, %s, %s)",
 
                    (nome, serie, valor, local, data_registo))
 
@@ -461,13 +461,13 @@ def gerar_relatorio_pdf():
 
     
 
-    cursor.execute("SELECT SUM(valor) FROM transacoes WHERE tipo = 'Entrada' AND mes_ano = ?", (mes_atual,))
+    cursor.execute("SELECT SUM(valor) FROM transacoes WHERE tipo = 'Entrada' AND mes_ano = %s", (mes_atual,))
 
     entradas = cursor.fetchone()[0] or 0.0
 
     
 
-    cursor.execute("SELECT SUM(valor) FROM transacoes WHERE tipo = 'Saida' AND mes_ano = ?", (mes_atual,))
+    cursor.execute("SELECT SUM(valor) FROM transacoes WHERE tipo = 'Saida' AND mes_ano = %s", (mes_atual,))
 
     saidas = cursor.fetchone()[0] or 0.0
 
@@ -507,7 +507,7 @@ def excluir(id):
         
     conn = conectar_banco()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM transacoes WHERE id = ?", (id,))
+    cursor.execute("DELETE FROM transacoes WHERE id = %s", (id,))
     conn.commit()
     conn.close()
     
