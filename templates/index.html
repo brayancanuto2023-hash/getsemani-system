@@ -267,7 +267,17 @@
             <div class="card card-custom p-4 bg-white mb-4" id="transacoes">
 
                 <h5 class="fw-bold mb-3">Movimentos Financeiros do Mês Corrente</h5>
-
+            <div class="card p-3 mb-4 shadow-sm bg-white rounded">
+    <form method="GET" action="/" class="row g-3 align-items-center">
+        <div class="col-md-8">
+            <input type="text" class="form-control" name="busca" placeholder="Pesquisar por descrição, categoria ou membro..." value="{{ busca }}">
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            <a href="/" class="btn btn-outline-secondary w-50">Limpar</a>
+        </div>
+    </form>
+</div>
                 <div class="table-responsive">
 
                     <table class="table table-hover align-middle">
