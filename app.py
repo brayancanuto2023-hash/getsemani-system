@@ -322,9 +322,12 @@ def adicionar_transacao():
 
     descricao = request.form.get('descricao', '')
 
-    mes_ano = datetime.now().strftime('%m/%Y')
-
-    data_registo = datetime.now().strftime('%d/%m/%Y %H:%M')
+    from datetime import timedelta
+    fuso_brasil = timedelta(hours=-3)
+    agora_br = datetime.now() + fuso_brasil
+    
+    mes_ano = agora_br.strftime('%m/%Y')
+    data_registo = agora_br.strftime('%d/%m/%Y %H:%M')
 
     
 
