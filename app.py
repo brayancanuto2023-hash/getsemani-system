@@ -137,7 +137,7 @@ inicializar_banco()
 @app.route('/')
 
 def index():
-busca = request.args.get('busca', '')
+    busca = request.args.get('busca', '')
     if 'usuario' not in session:
 
         return redirect(url_for('login'))
