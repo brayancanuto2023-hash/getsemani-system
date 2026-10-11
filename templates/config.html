@@ -1,1 +1,45 @@
 
+            <div class="card card-custom p-4 bg-white mb-4" id="config">
+
+                <h5 class="fw-bold mb-3">Configurações & Gestão de Acessos Ilimitados</h5>
+
+                <form action="/criar_usuario" method="POST" class="row g-3">
+
+                    <div class="col-md-4">
+
+                        <input type="text" class="form-control" name="novo_user" placeholder="Nome do Novo Utilizador" required>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <input type="password" class="form-control" name="nova_senha" placeholder="Senha de Acesso" required>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <select class="form-select" name="novo_cargo" required>
+
+                            <option value="Pastor">Pastor</option>
+
+                            <option value="Tesoureira">Tesoureira</option>
+
+                            <option value="Membro">Membro</option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <button type="submit" class="btn btn-success w-100 fw-bold">Criar Conta</button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+            {% endif %}
+
