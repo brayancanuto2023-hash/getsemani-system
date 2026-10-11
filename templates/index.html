@@ -331,9 +331,12 @@
                                 <td>{{ t[5] }}</td>
 
                                 <td>{{ t[6] }}</td>
-
-                            </tr>
-
+                                <td>
+        <form action="{{ url_for('excluir', id=t[0]) }}" method="POST" style="display:inline;">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir esta transação?')">Excluir</button>
+        </form>
+    </td>
+</tr>
                             {% else %}
 
                             <tr>
