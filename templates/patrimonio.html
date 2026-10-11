@@ -1,1 +1,103 @@
+<!-- Gestão de Património -->
 
+            <div class="card card-custom p-4 bg-white mb-4" id="patrimonio">
+
+                <h5 class="fw-bold mb-3">Gestão de Património Ministerial (Bens da Igreja)</h5>
+
+                {% if cargo == 'Admin' %}
+
+                <form action="/adicionar_patrimonio" method="POST" class="row g-3 mb-4">
+
+                    <div class="col-md-3">
+
+                        <input type="text" class="form-control" name="nome_equipamento" placeholder="Nome (ex: Caixa de Som)" required>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <input type="text" class="form-control" name="numero_serie" placeholder="Nº de Série" required>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <input type="number" step="0.01" class="form-control" name="valor" placeholder="Valor (R$)" required>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <input type="text" class="form-control" name="localizacao" placeholder="Local (ex: Templo Principal)" required>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <button type="submit" class="btn btn-dark w-100 fw-bold">Registar Bem</button>
+
+                    </div>
+
+                </form>
+
+                {% endif %}
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered align-middle">
+
+                        <thead class="table-dark">
+
+                            <tr>
+
+                                <th>Equipamento</th>
+
+                                <th>Número de Série</th>
+
+                                <th>Valor Estimado</th>
+
+                                <th>Localização Física</th>
+
+                                <th>Data de Registo</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for p in patrimonios %}
+
+                            <tr>
+
+                                <td class="fw-bold">{{ p[1] }}</td>
+
+                                <td><code>{{ p[2] }}</code></td>
+
+                                <td>R$ {{ "%.2f"|format(p[3]) }}</td>
+
+                                <td>{{ p[4] }}</td>
+
+                                <td>
+                <form action="{{ url_for('excluir', id=p[0]) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</button>
+                </form>
+            </td>
+
+                            {% else %}
+
+                            <tr>
+
+                                <td colspan="5" class="text-center text-muted">Nenhum património registado.</td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
