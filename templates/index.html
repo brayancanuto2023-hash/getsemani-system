@@ -91,7 +91,26 @@
             </div>
 
 
-
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card card-custom bg-white p-3 border-start border-success border-4 shadow-sm">
+            <h6 class="text-muted mb-1">Entradas do Mês</h6>
+            <h4 class="text-success fw-bold">R$ {{ total_entradas }}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-custom bg-white p-3 border-start border-danger border-4 shadow-sm">
+            <h6 class="text-muted mb-1">Saídas do Mês</h6>
+            <h4 class="text-danger fw-bold">R$ {{ total_saidas }}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-custom bg-white p-3 border-start border-primary border-4 shadow-sm">
+            <h6 class="text-muted mb-1">Saldo Atual</h6>
+            <h4 class="text-primary fw-bold">R$ {{ saldo_atual }}</h4>
+        </div>
+    </div>
+</div>
             {% with messages = get_flashed_messages(with_categories=true) %}
 
               {% if messages %}
