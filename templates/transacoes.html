@@ -1,1 +1,92 @@
+    <!-- Tabela de Movimentos -->
 
+            <div class="card card-custom p-4 bg-white mb-4" id="transacoes">
+
+                <h5 class="fw-bold mb-3">Movimentos Financeiros do Mês Corrente</h5>
+            <div class="card p-3 mb-4 shadow-sm bg-white rounded">
+    <form method="GET" action="/" class="row g-3 align-items-center">
+        <div class="col-md-8">
+            <input type="text" class="form-control" name="busca" placeholder="Pesquisar por descrição, categoria ou membro..." value="{{ busca }}">
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            <a href="/" class="btn btn-outline-secondary w-50">Limpar</a>
+        </div>
+    </form>
+</div>
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead class="table-light">
+
+                            <tr>
+
+                                <th>Tipo</th>
+
+                                <th>Categoria</th>
+
+                                <th>Valor</th>
+
+                                <th>Contribuinte</th>
+
+                                <th>Descrição</th>
+
+                                <th>Data</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for t in transacoes %}
+
+                            <tr>
+
+                                <td><span class="badge bg-{{ 'success' if t[1] == 'Entrada' else 'danger' }}">{{ t[1] }}</span></td>
+
+                                <td>{{ t[2] }}</td>
+
+                                <td class="fw-bold">R$ {{ "%.2f"|format(t[3]) }}</td>
+
+                                <td>
+
+                                    {% if t[2] == 'Dízimo' and is_admin_ou_pastor %}
+
+                                        {{ t[4] }} <span class="badge bg-secondary" style="font-size:9px;">Confidencial</span>
+
+                                    {% else %}
+
+                                        Anónimo
+
+                                    {% endif %}
+
+                                </td>
+
+                                <td>{{ t[5] }}</td>
+
+                                <td>{{ t[6] }}</td>
+                                <td>
+        <form action="{{ url_for('excluir', id=t[0]) }}" method="POST" style="display:inline;">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir esta transação?')">Excluir</button>
+        </form>
+    </td>
+</tr>
+                            {% else %}
+
+                            <tr>
+
+                                <td colspan="6" class="text-center text-muted">Nenhum registo financeiro neste mês ainda.</td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
