@@ -521,6 +521,23 @@ def excluir(id):
     
     flash('Registo excluído com sucesso!', 'success')
     return redirect(url_for('index'))
+   flash('Registo excluído com sucesso!', 'success')
+    return redirect(url_for('index'))
+
+@app.route('/transacoes')
+def transacoes():
+    return render_template('transacoes.html')
+
+@app.route('/patrimonio')
+def patrimonio():
+    return render_template('patrimonio.html')
+
+@app.route('/config')
+def config():
+    return render_template('config.html')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
     if __name__ == '__main__':
         app.run(host='0.0.0.0', port=5000, debug=True)
    
