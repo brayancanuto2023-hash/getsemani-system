@@ -421,7 +421,7 @@ def criar_usuario():
 
     try:
 
-        cursor.execute("INSERT INTO usuarios (username, senha, cargo) VALUES (?, ?, ?)", (username, senha, cargo))
+        cursor.execute("INSERT INTO usuarios (username, senha, cargo) VALUES (%s, %s, %s)", (username, senha, cargo))
 
         conn.commit()
 
