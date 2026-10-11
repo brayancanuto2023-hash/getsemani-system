@@ -521,8 +521,6 @@ def excluir(id):
     
     flash('Registo excluído com sucesso!', 'success')
     return redirect(url_for('index'))
-   flash('Registo excluído com sucesso!', 'success')
-    return redirect(url_for('index'))
 
 @app.route('/transacoes')
 def transacoes():
